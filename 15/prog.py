@@ -26,11 +26,11 @@ def execute(file, part2):
         idx+=1
     print(nums)
 
-    max = 2020 - 1
+    max = 2020
     if part2:
-        max = 30000000 - 1
+        max = 30000000
 
-    for turn in range(max - len(nums)):
+    for turn in range(max - idx):
 #        print ("find last", last, idx)
         newlast = find_last(nums, last, idx)
 #        print ("newlast", newlast)
