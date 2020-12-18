@@ -14,12 +14,15 @@ print("members", len(mem))
 
 def daysplaces(daynr):
     dayplaces = {}
-    for i in range(1,18):
+    maxday = 0
+    for i in range(1, 25):
         times = []
         for m in mem:
             comp = mem[m]["completion_day_level"]
             key = str(i)
             if key in comp:
+                if maxday < i:
+                    maxday = i
                 if '1' in comp[key] and '2' in comp[key]:
                     t1 = comp[key]['1']['get_star_ts']
                     t2 = comp[key]['2']['get_star_ts']
@@ -42,13 +45,14 @@ def daysplaces(daynr):
 
     if (daynr < 0):
         print("{0:23}".format("day"), end=' ')
-        for i in range(1,18):
+        drange = range(1, maxday +1)
+        for i in drange:
             print(" {0:<12}".format(i), end=' ')
         print()
         place = 1
         for k in sorted(dayplaces, key=lambda x: dayplaces[x]["points"], reverse=True):
             print("{0:2} {1:15} {2:4}".format(place, k[0:15], dayplaces[k]["points"]), end=' ')
-            for i in range(1,18):
+            for i in drange:
                 time = "0"
                 dayplace = 0
                 if i in dayplaces[k]:
