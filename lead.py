@@ -58,11 +58,11 @@ def daysplaces(daynr):
             print()
             place += 1
     else:
-        place = 1
-        for k in sorted(dayplaces, key=lambda x: dayplaces[x][daynr]):
+        for k in sorted(dayplaces, key=lambda x: (dayplaces[x][daynr][1] if daynr in dayplaces[x] else sys.maxsize)):
             if daynr in dayplaces[k]:
-                print(place, k, "{0}({1})".format(datetime.timedelta(seconds=dayplaces[k][i][0]), dayplaces[k][daynr][1]))
-                place += 1
+                time = str(datetime.timedelta(seconds=dayplaces[k][daynr][0]))
+                dayplace = dayplaces[k][daynr][1]
+                print("{0:2} {1:15} {2:>10}".format(dayplace, k[:15], time[0:10]))
 
 daynr = -1 if len(sys.argv) < 2 else int(sys.argv[1])
 daysplaces(daynr)
