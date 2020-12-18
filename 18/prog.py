@@ -61,29 +61,16 @@ def execute(file, part2):
     answer = 0
     with open(file) as f:
         for line in f:
-            expr = []
-            inslist = expr
-            stack = []
-            for i in range(len(line.rstrip())):
-#                print (line[i])
-                m = re.search("\d+", line[i]) 
-                if m:
-                    inslist.append(int(m.group(0)))
-                else:
-                    m = re.search("[+*]", line[i]) 
-                    if m:
-                        inslist.append(m.group(0))
-                    elif line[i] == "(":
-                        newl = []
-                        inslist.append(newl)
-                        stack.append(inslist)
-                        inslist = newl
-                    elif line[i] == ")":
-                        inslist = stack.pop()
-                    else:
-                        if line[i] != ' ':
-                            print("???",line[i],'+')
-                            assert(False)
+            print (line)
+            line = line.rstrip()
+            line = re.sub('\(','[', line)
+            line = re.sub('\)',']', line)
+            line = re.sub(' ',', ', line)
+            line = re.sub('\+','\'+\'', line)
+            line = re.sub('\*','\'*\'', line)
+            line = '[' + line + ']'
+            expr = eval(line)
+
             print(expr)
             if part2:
                 prioritizeadd(expr)
