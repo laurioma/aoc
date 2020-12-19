@@ -3,19 +3,19 @@ import time
 import re
 import copy
 
-def bfs(rulel, string):
-    vlog = 0
+def dfs_match(rulel, string):
+    vlog = 1
 
     if vlog:
-        print("BFS", rulel, string)
+        print("DFS", rulel, string)
     if len(rulel) > len(string):
         if vlog:
-            print("*BFS3 FAIL",len(rulel), len(string))
+            print("*DFS3 FAIL",len(rulel), len(string))
         return False
     elif len(rulel) == 0 or len(string) == 0:
         ret = len(rulel) == 0 and len(string) == 0
         if vlog:
-            print("*BFS2 ", "OK" if ret else "FAIL")
+            print("*DFS2 ", "OK" if ret else "FAIL")
         return ret
 
     s = rulel.pop(0) 
@@ -26,17 +26,17 @@ def bfs(rulel, string):
         if string[0] == s:
             if vlog:
                 print("MATCH", s, rulel)
-            return bfs(rulel, string[1:])
+            return dfs_match(rulel, string[1:])
     else:
         for neighbour in rules[s]:
             if vlog:
                 print("nn", neighbour, "->", list(neighbour) + rulel)
-            if bfs(list(neighbour) + rulel, string):
+            if dfs_match(list(neighbour) + rulel, string):
                 if vlog:
-                    print ("*BFS1 OK")
+                    print ("*DFS1 OK")
                 return True
     if vlog:
-        print("BFS0 FAIL")
+        print("DFS0 FAIL")
     return False
 
 rules = {}
@@ -86,7 +86,7 @@ def execute(file, part2):
     count = 0
     for line in text:
         print ("START", line, end = ' ')
-        m = bfs(list(rules[0][0]), line)
+        m = dfs_match(list(rules[0][0]), line)
         if m:
             print("\t\t\t\t\tOK")
             count+=1
