@@ -4,7 +4,7 @@ import re
 import copy
 
 def dfs_match(rulel, string):
-    vlog = 1
+    vlog = 0
 
     if vlog:
         print("DFS", rulel, string)
