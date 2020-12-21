@@ -4,140 +4,105 @@ import copy
 import re
 import itertools
 
-def maxelem(cands, exclude):
-    maxc = 0
-    el = None
-    for c in cands:
-        if c not in exclude:
-            if maxc < cands[c]:
-                maxc = cands[c]
-                el = c
-    return el
-
-
-def findmaxany(cands):
-    maxc = 0
-    for c in cands:
-        if maxc < cands[c]:
-            maxc = cands[c]
-    return maxc
-
-# list of map of ingr=allerg
-def resolve_ingr(allerg_cands):
-    res = []
-    ingr = {}
-    ac = allerg_cands.copy()
-#    while len(ingr) < len(allerg_cands):
-    while True:
-        mapping = {}
-#        print ("Start", ac)
-        first = True
-        for a in sorted(ac,  key=lambda x: findmaxany(ac[x]), reverse=True):
-            maxi = maxelem(ac[a], mapping.keys())
-            if maxi == None:
-                break
-#            print(a, findmaxany(ac[a]), a,"=", maxi)
-            if maxi not in mapping:
-                if first:
-                    if ac[a][maxi] == 1:
-                        del(ac[a][maxi])
-                    else:
-                        ac[a][maxi] = ac[a][maxi] - 1
-                    first = False
-#                print ("ADD ", maxi, a)
-                mapping[maxi] = a
-        if len(mapping) == len(allerg_cands):
-#            print("got mapping", mapping)
-            res.append(mapping)
-        else:
-#            print ("no more", len(mapping), ac)
-            break
-    print("Resolved", res)
-    return res
-
-def try_resolutions(ingr_sets, resl):
-    match = None
-    for res in resl:
-        result = True
-        for iset in ingr_sets:
-            print ("try", res, "for ", iset)
-            check = {}
-            for r in res:
-                for i in iset[0]:
-                    if i in r:
-                        check[res[r]] = check.get(res[r], 0) + 1
-
-            print("checking", check, iset[1])
-            for ch in iset[1]:
-                if ch not in check:
-                    print ("FAILED", ch, "not found", res, iset[0])
-                    result = False
-                    break
- #               elif check[ch] > 1:
- #                   print ("FAILED2", ch, "too many", res, iset[0])
- #                   result = False
- #                   break
-            if not result:
-                break
-        if result:
-            match = res
-            break
-    print("Found match", match)
-    return match
-
-def count_noallerg(ingr_sets, noallerg):
-    pass
-
+# find all lines containi
 def execute(file, partnr):
     global nump
     data = ""
     with open(file) as f:
         data = f.read()
 
-    allerg_cands={}
-    ingrs = set()
-    ingr_sets=[]
     rows = data.split('\n')
-    for row in rows:
+
+    all_ingrs = set()
+    foods = []
+    allergs = {}
+    ingrs = {}
+    for fid in range(len(rows)):
+        row = rows[fid]
         s = row.split('(')
         ingr = s[0].rstrip().split(" ")
+        foods.append(set(ingr))
+
         for i in ingr:
-            ingrs.add(i)
+            if i not in ingrs:
+                ingrs[i] = set()
+            ingrs[i].add(fid)
+
+        for i in ingr:
+            all_ingrs.add(i)
         m = re.search("contains (.*)\)", s[1])
         assert(m)
         allerg = m.group(1).split(", ")
-        ingr_sets.append([ingr, allerg])
-        for a, i in itertools.product(allerg, ingr):
-#            print ("iter", a, i)
-            if not a in allerg_cands:
-                allerg_cands[a] = {}
-            allerg_cands[a][i] = allerg_cands[a].get(i, 0) + 1
-        print ("acands", allerg_cands)
-        print ("ingr_sets", ingr_sets)
-    r = resolve_ingr(allerg_cands)
-    m = try_resolutions(ingr_sets, r)
-    if not m:
-        print("NOTHING")
-        return
+
+        for a in allerg:
+            if a not in allergs:
+                allergs[a] = set()
+            allergs[a].add(fid)
+
+    print("foods", foods)
+    print("ingrs", ingrs)
+    print("allergs", allergs)
+
+    # map allergens to candidate ingredients
+    # ingredient is candidate for allergen if it's present in all the lines where same allergen occurs
+    cand = {}
+    for a, i in itertools.product(allergs, ingrs):
+        if bool(allergs[a].union(ingrs[i])):
+#            print ("check if ", i, "allways there for", a)
+            # check if i is in all lines with a
+            fits = True
+            for afood in allergs[a]:
+#                print("check", foods[afood])
+                if not i in foods[afood]:
+#                    print("not")
+                    fits=False
+                    break
+            if fits:
+                if a not in cand:
+                    cand[a] = set()
+                cand[a].add(i)
+                print("OK", i, a)
+
+    print("candidates", cand)
+
+    results={}
+    while cand:
+        resolved = None
+        for ac in cand:
+            if len(cand[ac]) == 1:
+                print("Resolved {0}={1}".format(ac, cand[ac]))
+                resolved = cand[ac].pop()
+                results[resolved] = ac
+                del cand[ac]
+                break
+        if resolved:
+            for ac in cand:
+                if resolved in cand[ac]:
+                    print("remove from", resolved, cand[ac])
+                    cand[ac].remove(resolved)
+        else:
+            assert(), "resolved nothing" 
+    assert(len(cand) == 0)
+    print ("Results", results)
 
     noallerg = set()
-    for i in ingrs:
-        if i not in m:
+    for i in all_ingrs:
+        if i not in results:
             noallerg.add(i)
     print("NOT", noallerg)
 
     count = 0
-    for iset in ingr_sets:
+    for food in foods:
         for na in noallerg:
-            if na in iset[0]:
+            if na in food:
                 count+=1
 
     print("Answer1", count)
 
     print("Answer2", end=' ')
-    for a in sorted(m,  key=lambda x: m[x]):
+    for a in sorted(results,  key=lambda x: results[x]):
         print("{0},".format(a), end='')
-
+ 
 
 f = "input.txt" if len(sys.argv) < 2 else sys.argv[1]
 p2 = 0 if len(sys.argv) < 3 else int(sys.argv[2])
