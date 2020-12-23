@@ -85,7 +85,7 @@ def printr(ring, start, name=''):
 def crab_move2(ring, idx):
     removed = []
     remove = idx
-    maxval = len(ring) 
+    maxval = len(ring) - 1
     for i in range(3):
         remove = ring[remove]
         vprint("removed", remove)
@@ -118,10 +118,10 @@ def crab_move2(ring, idx):
 
 def part2():
     datain = [7,3,9,8,6,2,5,4,1]
-#    datain = [3,8,9,1,2,5,4,6,7]
+    datain = [3,8,9,1,2,5,4,6,7]
 
-    ring = {}
-
+    ring = [0]*(DATALEN2+1)
+    print(len(ring))
     for i in range(DATALEN2):
         if i < len(datain) - 1:
             ring[datain[i]] = datain[i + 1]
