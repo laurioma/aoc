@@ -4,7 +4,6 @@ import copy
 import re
 import itertools
 import profile
-from collections import defaultdict
 
 
 def vprint(*args, end='\n'):
@@ -52,8 +51,8 @@ def get_neighbours(coord):
 
 def count_neighbours(flipped, tile):
     count = 0
-    for f in flipped:
-        if f in get_neighbours(tile):
+    for n in get_neighbours(tile):
+        if n in flipped:
             count +=1
     return count
 
@@ -61,21 +60,21 @@ NUMDAYS = 100
 
 def part2(flipped):
     for i in range(NUMDAYS):
-        new = defaultdict(lambda: (0))
+        new = set()
         # copy blacks
         for f in flipped:
             cn = count_neighbours(flipped, f)
             if cn == 0 or cn >= 2:
                 pass
             else:
-                new[f] = 1
+                new.add(f)
         
             # go over all the whites
             neighbours = get_neighbours(f)
 #            print("ne", len(neighbours))
             for n in neighbours:
-                if n not in new.keys() and count_neighbours(flipped, n) == 2: #and n not in flipped.keys(): #why?
-                    new[n] = 1
+                if count_neighbours(flipped, n) == 2:
+                    new.add(n)
         print("day", i+1, len(new))
         flipped = new
     
@@ -121,7 +120,7 @@ def execute(file, partnr):
 
     print(linecmds)
 
-    flipped = defaultdict(lambda: (0))
+    flipped = set()
     for lc in linecmds:
         offsc = (0,0) # x, y
         for c in lc:
@@ -130,9 +129,9 @@ def execute(file, partnr):
             print ("cmd", c, b4, "->", offsc)
 
         if offsc in flipped:
-            del flipped[offsc]
+            flipped.remove(offsc)
         else:
-            flipped[offsc] = 1
+            flipped.add(offsc)
         print(offsc)
     print(len(flipped))
 
