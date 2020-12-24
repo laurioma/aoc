@@ -58,13 +58,37 @@ def count_neighbours(flipped, tile):
 
 NUMDAYS = 100
 
+def printt(flipped):
+    minx = miny = -1
+    maxx = maxy = 1
+    if len(flipped):
+        maxx = max(flipped, key=lambda x: x[0])[0]
+        minx = min(flipped, key=lambda x: x[0])[0]
+        maxy = max(flipped, key=lambda x: x[1])[1]
+        miny = min(flipped, key=lambda x: x[1])[1]
+    print("   ", end='')
+    for x in range(minx, maxx+1):
+        print ("{0:2}".format(x),end='')
+    print()
+    for y in range(miny, maxy+1):
+        print("{0:2} ".format(y), end='')
+        if y % 2 == 1:
+            print(" ", end = '')
+        for x in range(minx, maxx+1):
+            if (x, y) in flipped:
+                print ("B", end=" ")
+            else:
+                print ("W", end=" ")
+        print()
+
 def part2(flipped):
+#    printt(flipped)
     for i in range(NUMDAYS):
         new = set()
         # copy blacks
         for f in flipped:
             cn = count_neighbours(flipped, f)
-            if cn == 0 or cn >= 2:
+            if cn == 0 or cn > 2:
                 pass
             else:
                 new.add(f)
@@ -73,15 +97,13 @@ def part2(flipped):
             neighbours = get_neighbours(f)
 #            print("ne", len(neighbours))
             for n in neighbours:
-                if count_neighbours(flipped, n) == 2:
+                if count_neighbours(flipped, n) == 2 and n not in flipped:
                     new.add(n)
         print("day", i+1, len(new))
         flipped = new
-    
-    count = 0
-    for t in new:
-        count +=1
-    print ("Answer2", count)
+#        printt(flipped)
+
+    print ("Answer2", len(new))
 
 
 def execute(file, partnr):
@@ -118,7 +140,7 @@ def execute(file, partnr):
                 idx += 1
         linecmds.append(cmd)
 
-    print(linecmds)
+#    print(linecmds)
 
     flipped = set()
     for lc in linecmds:
@@ -126,19 +148,14 @@ def execute(file, partnr):
         for c in lc:
             b4 = offsc
             offsc = move(offsc, c)
-            print ("cmd", c, b4, "->", offsc)
+#            print ("cmd", c, b4, "->", offsc)
 
         if offsc in flipped:
             flipped.remove(offsc)
         else:
             flipped.add(offsc)
-        print(offsc)
-    print(len(flipped))
-
-    count = 0
-    for t in flipped:
-        count +=1
-    print ("Answer1", count)
+#        print(offsc)
+    print ("Answer1", len(flipped))
 
     part2(flipped)
 
