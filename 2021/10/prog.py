@@ -18,10 +18,10 @@ closingsc2[']'] = 2
 closingsc2['}'] = 3
 closingsc2['>'] = 4
 
-def check2(str):
+def parse(str):
     opening = []
     for i in range(len(str)):
-        if str[i] in closing.keys():
+        if str[i] in closing:
             opening.append(str[i])
         elif str[i] in closing.values():
             if str[i] == closing[opening[-1]]:
@@ -29,43 +29,30 @@ def check2(str):
                 opening.pop()
             else:
 #                print('errclosing',i, opening[-1], str[i])
-                return (str[i], False)
-    return ('', True)
-
-def check3(str):
-    opening = []
-    for i in range(len(str)):
-        if str[i] in closing.keys():
-            opening.append(str[i])
-        elif str[i] in closing.values():
-            if str[i] == closing[opening[-1]]:
-#                print('okclosing',i, opening[-1], str[i])
-                opening.pop()
-            else:
-                assert False
+                return (str[i], False, opening)
         else:
             assert False
-    return opening
+    return ('', True, opening)
 
 def run(part2):
     lines = open(sys.argv[1]).read().splitlines()
     answ = 0
     incompl = []
     for l in lines:
-        ret = check2(l)
-        if not ret[1]:
-            answ += closingsc[ret[0]]
+        sym, ok, _ = parse(l)
+        if not ok:
+            answ += closingsc[sym]
         else:
             incompl.append(l)
 
     print("Part1", answ)
-
+#    print(incompl)
     scores = []
     for l in incompl:
-        ret = check3(l)
+        sym, ok, remaining = parse(l)
         score = 0
 #        print(ret)
-        for r in reversed(ret):
+        for r in reversed(remaining):
             score *= 5
             score += closingsc2[closing[r]]
 #            print(score, closing[r], closingsc2[closing[r]])
