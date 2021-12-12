@@ -1,4 +1,5 @@
 import sys 
+import itertools
 
 def printm(matrix):
     for r in matrix:
@@ -6,52 +7,46 @@ def printm(matrix):
             print("%1d" % int(c), end='')
         print("")
 
-def step(grid, w, h):
-    for y in range(h):
-        for x in range(w):
-            grid[y][x] += 1
+def flash(grid, w, h, x, y):
+    flashcnt = 1
+    for yy, xx in itertools.product((y - 1, y, y+1), (x - 1, x, x+1)):
+        if xx >= 0 and xx < w and yy >= 0 and yy < h:
+            grid[yy][xx] += 1
+            if grid[yy][xx] == 10:
+                flashcnt += flash(grid, w, h, xx, yy)
 
-def flash(grid, w, h, flashed):
-    someflashed = False
-    for y in range(h):
-        for x in range(w):
-            if grid[y][x] > 9 and (x, y) not in flashed:
-                flashed.append((x, y))
-                for yy in (y - 1, y, y+1):
-                    for xx in (x - 1, x, x+1):
-                        if xx >= 0 and xx < w and yy >= 0 and yy < h:
-                            grid[yy][xx] += 1
-                            someflashed = True
-    return someflashed
-
-
+    return flashcnt
 
 def run(part2):
     lines = open(sys.argv[1]).read().splitlines()
     grid = [[int(c) for c in row] for row in lines]; w=len(grid[0]); h=len(grid)
 
-    countf = 0
-    max = 100 if not part2 else 10000
-    answ = 0
+    max = 100 if not part2 else sys.maxsize
+    totalfcnt = 0
+    goal_fcnt = w*h
     for s in range(max):
-        flashed = []
-        step(grid, w, h)
-        while flash(grid, w, h, flashed):
-            #printm(grid)
-            continue
-        countf += len(flashed)
-        if len(flashed) == 100:
-            #print ("allflashed!!")
-            answ = s+1
-            break
-        for y in range(h):
-            for x in range(w):
-                if grid[y][x] > 9:
-                    grid[y][x] = 0
-        print("step", s+1, countf)
-        answ = countf
+        flashcnt = 0
+        # everyone +1
+        for y, x in itertools.product(range(h), range(w)): 
+            grid[y][x] += 1
+            # run the flashing 
+            if grid[y][x] == 10:
+                flashcnt += flash(grid, w, h, x, y)
+
+        # flip to 0
+        for y, x in itertools.product(range(h), range(w)):
+            if grid[y][x] > 9:
+                grid[y][x] = 0
+
+        totalfcnt += flashcnt
+        #print ("step", s+1, "flashcnt", flashcnt, "total", totalfcnt)
         #printm(grid)
-    print("Part", 2 if part2 else 1, answ)
+        if part2:
+            if flashcnt == goal_fcnt:
+                print("Part2", s+1)
+                break
+    if not part2:
+        print("Part1", totalfcnt)
 
 
 
