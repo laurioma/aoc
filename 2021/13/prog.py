@@ -1,11 +1,5 @@
 import sys
 
-def printm(matrix):
-    for r in matrix:
-        for c in r:
-            print(c, end='')
-        print("")
-
 def printp(coords):
     maxx = 0
     maxy = 0
@@ -14,28 +8,47 @@ def printp(coords):
             maxx = c[0]
         if c[1] > maxy:
             maxy = c[1]
-    paper = [['#' if (x, y) in coords else '.' for x in range(maxx+1)] for y in range(maxy+1)]
-    printm(paper)
+    for y in range(maxy+1):
+        for x in range(maxx+1):
+            if (x,y) in coords:
+                print('#', end='')
+            else:
+                print('.', end='')
+        print("")
 
 def foldy(coords, y):
-    for i in range(len(coords)):
-        if coords[i][1] > y:
-            dst = coords[i][1] - y 
+    remove = []
+    add = []
+    for c in coords:
+        if c[1] > y:
+            remove.append(c)
+            dst = c[1] - y 
 #            print ('foldy', coords[i], dst, y - dst)
-            coords[i] = (coords[i][0], y - dst)
+            add.append((c[0], y - dst))
+    for r in remove:
+        coords.remove(r)
+    for a in add:
+        coords.add(a)
 
 def foldx(coords, x):
-    for i in range(len(coords)):
-        if coords[i][0] > x:
-            dst = coords[i][0] - x 
-#            print ('foldx', coords[i], dst, x - dst)
-            coords[i] = (x - dst, coords[i][1])
+    remove = []
+    add = []
+    for c in coords:
+        if c[0] > x:
+            remove.append(c)
+            dst = c[0] - x 
+#            print ('foldx', coords[i], dst, y - dst)
+            add.append((x - dst, c[1]))
+    for r in remove:
+        coords.remove(r)
+    for a in add:
+        coords.add(a)
 
 def run(part2):
     lines = open(sys.argv[1]).read().splitlines()
     instr = []
     getinstr = False
-    coords = []
+    coords = set()
     for l in lines:
         if l.strip() == "":
             getinstr = True
@@ -43,7 +56,7 @@ def run(part2):
 
         if not getinstr:
             s = l.split(',')
-            coords.append((int(s[0]), int(s[1])))
+            coords.add((int(s[0]), int(s[1])))
 
         else:
             i = l.split('=')
@@ -55,11 +68,8 @@ def run(part2):
             foldx(coords, instr[0][1])
         else:
             foldy(coords, instr[0][1])
-        uniq = set()
-        for c in coords:
-            uniq.add(c)
 
-        print("Part1", len(uniq))
+        print("Part1", len(coords))
     else:
         for i in instr:
 #            print("instr", i)
