@@ -4,8 +4,6 @@ import (
     "fmt"
     "os"
     "strings"
-//    "strconv"
-//    "math"
 )
 
 func chk(e error) {
@@ -28,29 +26,29 @@ func cnt_in_slice(a string, list []string) int {
     return cnt
 }
 
-func find_all_paths(graph map[string][]string, paths map[string]bool, start, end string, path []string, allowtwice string) {
+func find_all_paths(graph map[string][]string, start, end string, path []string, part2 bool, twice string) int {
+    if part2 && twice == "" && !is_upper(start) && cnt_in_slice(start, path) == 1 {
+        twice = start
+    }
+
     npath := make([]string, len(path))
     copy(npath, path)
     npath = append(npath, start)
 
     if start == end {
-        joinp := strings.Join(npath,"")
-        paths[joinp] = true
-        return
+        return 1
     }
     // start not in graph
     if _, ok := graph[start]; !ok {
-        return
+        return 0
     }
+    count := 0
     for _, node := range graph[start] {
-        allowcnt := 0
-        if allowtwice != "" && node == allowtwice {
-            allowcnt = 1
-        }
-        if cnt_in_slice(node, npath) <= allowcnt || is_upper(node) {
-            find_all_paths(graph, paths, node, end, npath, allowtwice)
+        if cnt_in_slice(node, npath) == 0 || is_upper(node) || (part2 && node != "start" && twice == "") {
+            count += find_all_paths(graph, node, end, npath, part2, twice)
         }
     }
+    return count
 }
 
 func main() {
@@ -69,23 +67,9 @@ func main() {
         graph[split[0]] = append(graph[split[0]], split[1])
         graph[split[1]] = append(graph[split[1]], split[0])
     }
-    // go has no set..
-    paths := make(map[string]bool)
-    if part == 1 {
-        path := make([]string, 0)
-        find_all_paths(graph, paths, "start", "end", path, "")
-    } else {
-        small_caves := make([]string, 0)
-        for k, _ := range graph { 
-            if k != "start" && k != "end" && !is_upper(k) {
-                small_caves = append(small_caves, k)
-            }
-        }
-        for _, c := range small_caves {
-            path := make([]string, 0)
-            find_all_paths(graph, paths, "start", "end", path, c)
-        }
-    }
-    fmt.Printf("Part%v: %v", part, len(paths))
+
+    path := make([]string, 0)   
+    cnt := find_all_paths(graph, "start", "end", path, part == 2, "")
+    fmt.Printf("Part%v: %v", part, cnt)
     return
 }

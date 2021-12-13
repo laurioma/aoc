@@ -1,21 +1,20 @@
 import sys
-import os
-import itertools
 
-def find_all_paths(graph, pathset, start, end, path, twice, twicecnt):
-    #print('s',start, path)
-    if start == twice:
-        twicecnt += 1
+def find_all_paths(graph, start, end, path, part2, twice):
+#    print('s',start, twice, path.count(start), path)
+    if part2 and twice == '' and start.islower() and path.count(start) == 1:
+        twice = start
     path = path + [start]
     if start == end:
-        pathset.add(''.join(path))
-        return
+        return 1
     if not start in graph:
-        return
-    paths = []
+        return 0
+
+    count = 0
     for node in graph[start]:
-        if node not in path or node.isupper() or (node == twice and twicecnt < 2):
-            find_all_paths(graph, pathset, node, end, path, twice, twicecnt)
+        if node not in path or node.isupper() or (part2 and node != 'start' and twice == ''):
+            count += find_all_paths(graph, node, end, path, part2, twice)
+    return count
 
 def run(part2):
     lines = open(sys.argv[1]).read().splitlines()
@@ -32,20 +31,12 @@ def run(part2):
 #    print(graph)
 
     pathset = set()
-    if not part2:
-        path = []
-        find_all_paths(graph, pathset, 'start', 'end', path, '', 0)
-        answ = len(pathset)
-    else:
-        keys = list(graph.keys())
-        keys.remove('start')
-        keys.remove('end')
-        for k in keys:
-            path = []
-            find_all_paths(graph, pathset, 'start', 'end', path, k, 0)
+    path = []
+
+    count = find_all_paths(graph, 'start', 'end', path,  part2, '')
 
 #    for pp in pathset:
 #        print(pp)
-    print("Part"+ ("2" if part2 else "1"), len(pathset))
+    print("Part"+ ("2" if part2 else "1"), count)
 
 run(0) if len(sys.argv) < 3 or sys.argv[2] == "1" else run(1)
