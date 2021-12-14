@@ -21,19 +21,16 @@ def getinput():
 
 def part1():
     templ, rules = getinput()
+    newt = templ
     for s in range(10):
-        insert = []
-        for i in range(len(templ)):
-            if i > 0:
-                for r in rules:
-                    if r[0] == templ[i-1] + templ[i]:
-                        insert.append((i, r[1]))
-        newt = templ
         inserted = 0
-        for i in insert:
-            idx = i[0] + inserted
-            newt = newt[0:idx] + i[1] + newt[idx:]
-            inserted+=1
+        for i in range(1,len(templ)):
+            for r in rules:
+                if r[0] == templ[i-1:i+1]:
+                    idx = i + inserted
+                    newt = newt[0:idx] + r[1] + newt[idx:]
+                    inserted+=1
+
 #        print ("round", s+1, newt, len(newt))
         templ = newt
     tset = set(templ)
@@ -48,13 +45,12 @@ def part2():
     templ, rules = getinput()
 
     pairs = {}
-    for i in range(len(templ)):
-        if i > 0:
-            k = templ[i-1] + templ[i]
-            if k in pairs:
-                pairs[k] += 1
-            else:
-                pairs[k] = 1
+    for i in range(1, len(templ)):
+        k = templ[i-1:i+1]
+        if k in pairs:
+            pairs[k] += 1
+        else:
+            pairs[k] = 1
 
 #    print(pairs)
     border1 = templ[0]
