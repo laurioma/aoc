@@ -1,4 +1,5 @@
 import sys
+from collections import defaultdict
 
 def getinput():
     lines = open(sys.argv[1]).read().splitlines()
@@ -44,13 +45,11 @@ def part1():
 def part2():
     templ, rules = getinput()
 
-    pairs = {}
+    pairs = defaultdict(int)
     for i in range(1, len(templ)):
         k = templ[i-1:i+1]
-        if k in pairs:
-            pairs[k] += 1
-        else:
-            pairs[k] = 1
+        pairs[k] += 1
+
 
 #    print(pairs)
     border1 = templ[0]
@@ -67,23 +66,14 @@ def part2():
         for d in deleted:
             k1 = d[0] + deleted[d][0]
             k2 = deleted[d][0] + d[1]
-            if k1 in pairs:
-                pairs[k1] += deleted[d][1]
-            else:
-                pairs[k1] = deleted[d][1]
-            if k2 in pairs:
-                pairs[k2] += deleted[d][1]
-            else:
-                pairs[k2] = deleted[d][1]
+            pairs[k1] += deleted[d][1]
+            pairs[k2] += deleted[d][1]
+
 #            print("ins", k1, k2, pairs)
 
-    cnt={}
+    cnt = defaultdict(int)
     for p in pairs:
-        if p[0] not in cnt:
-            cnt[p[0]] = 0
         cnt[p[0]] += pairs[p]
-        if p[1] not in cnt:
-            cnt[p[1]] = 0
         cnt[p[1]] += pairs[p]
 
     # every characrter except border ones are now counted twice

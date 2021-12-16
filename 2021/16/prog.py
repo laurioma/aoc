@@ -1,50 +1,43 @@
 import sys
 import itertools
 
+def read_bits(s, num):
+    bins = s[0:num]
+    return (int(bins, 2), s[num:])
+
 def decode_packet(s, versions):
-    ver = int(s[0:3], 2)
-    type = int(s[3:6], 2)
+    startlen = len(s)
+    ver, s = read_bits(s, 3)
+    type, s = read_bits(s, 3)
+    value = 0
+    subs = []
     versions.append(ver)
-#    print("decode", ver, type, s)
     if type == 4:
-        bins1 = s[6:]
-#        print("bins", bins1)
-        binn = ""
-        litlen_bit = 6
         while True:
-            litlen_bit += 5
-            binn += bins1[1:5]
-#            print("bin", binn, bins1, int(binn[1:], 2))
-            if bins1[0] == "0":
+            cont, s = read_bits(s, 1)
+            v, s = read_bits(s, 4)
+            value = (value << 4) + v
+            if cont == 0:
                 break
-            bins1 = bins1[5:]
-        return (litlen_bit, type, int(binn, 2), [])
     else:
-        lenid = s[6]
-#        print("operator", lenid, s)
-        if lenid == "0":
-            plen = int(s[7:22], 2)
-#            print("op0 len", plen, bin(plen))
-            start = 22
+        lenid, s = read_bits(s, 1)
+        if lenid == 0:
+            plen, s = read_bits(s, 15)
             remaining = plen
-            subs = []
+
             while remaining > 6:
-                sub = decode_packet(s[start:start+remaining], versions)
+                sub = decode_packet(s, versions)
+                s = s[sub[0]:]
                 subs.append(sub)
                 remaining -= sub[0]
-                start += sub[0]
-#            print("plen", plen, remaining)
-            return (22 + plen, type, 0,  subs) 
         else:
-            numsub = int(s[7:18], 2) 
-#            print("op1 numsub", numsub, bin(numsub))
-            start = 18
-            subs = []
+            numsub, s = read_bits(s, 11)
             for i in range(numsub):
-               sub = decode_packet(s[start:], versions)
+               sub = decode_packet(s, versions)
+               s = s[sub[0]:]
                subs.append(sub)
-               start += sub[0]
-            return (start, type, -1, subs)
+    
+    return (startlen - len(s), type, value, subs)
 
 def calculate(packets):
     #value
@@ -90,10 +83,8 @@ def run():
         intv = int(s,16)
         lenhex = len(s)
         bins = format(intv, '0'+str(lenhex*4)+'b')
-#        print("bins", bins)
         versions = []
         packets = decode_packet(bins, versions)
-#        print(versions, sum(versions), packets)
 
         print("Part1", sum(versions))
 
