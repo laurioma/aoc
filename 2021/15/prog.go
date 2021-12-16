@@ -6,6 +6,7 @@ import (
     "strings"
     "strconv"
     "container/heap"
+    "math"
 )
 
 type pq_item struct {
@@ -103,10 +104,52 @@ func dijkstra(grid [][]uint8, start [2]int, end [2]int) int {
     return 0
 }
 
+type queue_item struct {
+    coords [2]int
+    cost int
+}
+
+func bfs(grid [][]uint8, start [2]int, end [2]int) int {
+    visited := make(map[[2]int]int, 0)
+    queue := make([]queue_item, 0)
+    min_cost := math.MaxInt
+    queue = append(queue, queue_item { [2]int{0,0},  0});
+    for len(queue) > 0 {
+        item := queue[0]
+        queue = queue[1:] 
+//		fmt.Printf("pop %v %v\n", item.coords, item.cost)
+
+        if item.coords == end {
+            if item.cost < min_cost {
+                min_cost = item.cost
+            }
+        }
+        xydirs := [][]int{{-1, 0}, {0, -1}, {0, 1}, {1, 0}}
+        for _, xy := range xydirs {
+            x := item.coords[0] + xy[0]
+            y := item.coords[1] + xy[1]
+            if 0 <= x && x < len(grid[0]) && 0 <= y && y < len(grid) {
+                newcoords := [2]int{x, y}
+                newcost := item.cost + int(grid[y][x])
+                if _, ok := visited[newcoords]; !ok || visited[newcoords] > newcost {
+                    visited[newcoords] = newcost
+//                    fmt.Printf("push %v %v\n", newcoords, newcost)
+                    queue = append(queue, queue_item { newcoords, newcost});
+                }
+            }
+        }
+	}
+    return min_cost
+}
+
 func main() {
     part := 1
     if len(os.Args) > 2 && os.Args[2] == "2" {
         part = 2
+    }
+    method := "djikstra"
+    if len(os.Args) > 3 && os.Args[3] == "bfs" {
+        method = "bfs"
     }
     dat, _ := os.ReadFile(os.Args[1])
     strarr := strings.Split(strings.ReplaceAll(string(dat), "\r", ""), "\n")
@@ -122,7 +165,11 @@ func main() {
 
     res := 0
     if part == 1 {
-        res = dijkstra(grid, [2]int{0,0}, [2]int{len(grid) - 1, len(grid[0]) - 1})
+        if method == "bfs" {
+            res = bfs(grid, [2]int{0,0}, [2]int{len(grid) - 1, len(grid[0]) - 1})
+        } else {
+            res = dijkstra(grid, [2]int{0,0}, [2]int{len(grid) - 1, len(grid[0]) - 1})
+        }
     } else {
         maxrep := 5
         grid1 := make([][]uint8, len(grid) * maxrep)
@@ -147,7 +194,11 @@ func main() {
             }    
         }
         //printm(grid1)
-        res = dijkstra(grid1, [2]int{0,0}, [2]int{len(grid1) - 1, len(grid1[0]) - 1})
+        if method == "bfs" {
+            res = bfs(grid1, [2]int{0,0}, [2]int{len(grid1) - 1, len(grid1[0]) - 1})
+        } else {
+            res = dijkstra(grid1, [2]int{0,0}, [2]int{len(grid1) - 1, len(grid1[0]) - 1})
+        }
     }
 
     fmt.Printf("Part%v: %v", part, res)
