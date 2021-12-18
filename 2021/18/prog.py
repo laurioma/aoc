@@ -13,13 +13,10 @@ def run_explode(s, idx):
     firsthalf = s[0:idx]
     sechalf = s[idxr+1:]
 
-    nums = re.findall('[0-9]+', firsthalf)
-    if nums:
-        lastn = nums[-1]
-        firsthalf = firsthalf[::-1] # reverse string
-        firsthalf = re.sub("[0-9]+", "X", firsthalf, 1)
-        firsthalf = firsthalf[::-1]
-        firsthalf = re.sub("X", str(int(lastn)+ pair[0]), firsthalf, 1)
+    m = re.search('(\d+)(?!.*\d)', firsthalf) # last number
+    if m:
+        firstn = m.group()
+        firsthalf = re.sub("(\d+)(?!.*\d)", str(int(firstn)+ pair[0]), firsthalf, 1)
     m = re.search('[0-9]+', sechalf)
     if m:
         secn = m.group()
@@ -29,8 +26,7 @@ def run_explode(s, idx):
     return s, pair
 
 def explode(s):
-#    print ("expl in", s)
-
+    # print ("expl in", s)
     count_open = 0
     for i in range(len(s)):
         if s[i] == "[":
@@ -39,9 +35,9 @@ def explode(s):
             count_open -= 1
         if count_open == 5:
             ret =  run_explode(s, i)
-#            print("expl EX", ret[0], ret[1])
+            # print("expl EX", ret[0], ret[1])
             return ret[0], True
-#    print("expl noexplode")
+    # print("expl noexplode")
     return s, False
 
 def run_split(a):
@@ -60,24 +56,20 @@ def run_split(a):
         return [v1, v2], False
 
 def run_explode_split(expr):
+    exprs = json.dumps(expr)
     while True:
-        exploded = False
-        exprs = json.dumps(expr)
-        while True:
-            exprs, ok = explode(exprs)
-            if not ok:
-                break
-            else:
-                exploded = True                        
+        exprs, exploded = explode(exprs)
+        if exploded:
+            continue
 
         expr = eval(exprs)
-#        print("b4 split", expr)
+        # print("b4 split", expr)
         expr, splitted = run_split(expr)
-
-        if not exploded and not splitted:
+        # print("af split", expr)
+        if not splitted:
             break
-
-#        print("af split", expr)
+        else:
+            exprs = json.dumps(expr)
     return expr
 
 def mag(a):
