@@ -103,20 +103,15 @@ def run():
     for l in lines:
         exprs.append(eval(l))
 
-    for i in range(len(exprs)):
-        for j in range(len(exprs)):
-            expr1 = exprs[i]
-            expr2 = exprs[j]
-            e = add_pairs(expr1, expr2)        
-            e = run_explode_split(e)
-            m = mag(e)
-            if m > maxmag:
-                maxmag = m
-            e = add_pairs(expr2, expr1)        
-            e = run_explode_split(expr2)
-            m = mag(e)
-            if m > maxmag:
-                maxmag = m
+    for i, j in itertools.product(range(len(exprs)), range(len(exprs))):
+        if i == j:
+            continue
+        e = add_pairs(exprs[i], exprs[j])        
+        e = run_explode_split(e)
+        m = mag(e)
+        if m > maxmag:
+            maxmag = m
+
     print("Part2", maxmag)
 
 run()
