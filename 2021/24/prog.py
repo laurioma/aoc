@@ -1,18 +1,22 @@
 import sys
 from random import randrange
-import cProfile
+from collections import defaultdict
 
 REGS = {'w', 'x', 'y', 'z'}
 
-def run_prog(prog, input):
-    vars = {}
+def run_prog(prog, input, vars = None):
+    if vars == None:
+        vars = {}
+        for r in REGS:
+            vars[r] = 0
     originp = input
-    for r in REGS:
-        vars[r] = 0
+    inpidx = 0
     for i, instr in enumerate(prog):
         if instr[0] == "inp":
             assert(instr[1] in REGS)
             vars[instr[1]] = int(input[0])
+            # print("inp", inpidx, vars['z'])
+            inpidx+=1
             input = input[1:]
         elif instr[0] == "add":
             assert(instr[1] in REGS)
@@ -51,95 +55,90 @@ def run_prog(prog, input):
     # for r in rl:
     #     print(r, vars[r], end='|')
     # print()
-    return vars
+    return vars['z']
 
-def analyze_prog(prog):
-    vars = {}
-    for r in REGS:
-        vars[r] = 0
+def process_digit2(w, zi, div, add, add2):
+    # print("test",level,w,zi, div, add, add2)
+    z = zi
+    x=z%26
+    z=int(z/div)
+    x+=add
+    x= x != w
+    y=x*25
+    y+=1
+    z=z*y
+    y=w + add2
+    y*=x
+    z+=y
+    return z
 
-    inputidx = 0
-    for i, instr in enumerate(prog):
-        op = instr[0]
-        arg1 = vars[instr[1]]            
-        assert(instr[1] in REGS)
-        arg2 = None
-        if len(instr) == 3:
-            if instr[2] in REGS:
-                arg2 = vars[instr[2]]
-            else:
-                arg2 = int(instr[2])
+# the single digit validation function translated to python
+def process_digit(w, z, div, add, add2):
+    if z % 26 + add == w:
+        return int(z/div)
+    else:
+        return w + add2 + int(z/div) * 26 
 
-        if op == "inp":
-            vars[instr[1]] = [op, inputidx]
-            inputidx+=1
-        elif op == "add":
-            if arg1 == 0 and arg2 == 0:
-                vars[instr[1]] = 0
-            elif isinstance(arg1, int) and isinstance(arg2, int):  
-                vars[instr[1]] = arg1 + arg2
-            elif arg1 == 0 or arg2 == 0:
-                if arg1 == 0:
-                    vars[instr[1]] = arg2
-                else:
-                    vars[instr[1]] = arg1
-            else:
-                vars[instr[1]] = [op, arg1, arg2]
-        elif op == "mul":
-            if arg1 == 0 or arg2 == 0:
-                vars[instr[1]] = 0
-            elif arg1 == 1 or arg2 == 1:
-                if arg1 == 1:
-                    vars[instr[1]] = arg2
-                else:
-                    vars[instr[1]] = arg1
-            elif isinstance(arg1, int) and isinstance(arg2, int):
-                vars[instr[1]] = arg1 * arg2
-            else:
-                vars[instr[1]] = [op, arg1, arg2]
-        elif op == "div":
-            assert(arg2 != 0)
-            if arg1 == 0:
-                vars[instr[1]] = 0
-            elif isinstance(arg1, int) and isinstance(arg2, int):
-                vars[instr[1]] = arg1 / arg2
-            elif arg2 == 1:
-                vars[instr[1]] = arg1
-            else:
-                vars[instr[1]] = [op, arg1, arg2]
-        elif op == "mod":
-            if arg1 == 0:
-                vars[instr[1]] = 0
-            elif isinstance(arg1, int) and isinstance(arg2, int):
-                vars[instr[1]] = arg1 % arg2
-            else:                
-                vars[instr[1]] = [op, arg1, arg2]
+# returns what z had to be to get zout from process_digit
+def get_process_digit_inputz(w, zout, div, add, add2):
+    # if (z % 26) + add == w:
+    #     return int(z/div)
+    # zout = z/div => zin = zout * div 
+    for j in range(div):
+        zin = zout * div + j
+        if process_digit(w, zin, div, add, add2) == zout:
+            return True, zin
+
+    # if z % 26 + add != w:
+    #     return w + add2 + int(z/div) * 26 
+    for j in range(div):
+        zin = int((zout - w - add2)/26*div + j)
+        if process_digit(w, zin, div, add, add2) == zout:
+            return True, zin
+
+    return False, 0
+
+
+def check_num(progs, part2, idx, reqz, numstr):
+    rng = range(1,10) if part2 else range(9,0, -1)
+    for i in rng:
+        prg = progs[idx]
+        div = int(prg[4][2])
+        add = int(prg[5][2])
+        add2 = int(prg[15][2])
+
+        ok, reqz2 = get_process_digit_inputz(i, reqz, div, add, add2)
+        if not ok:
+            continue
+
+        if idx > 0:
+            ok, numstr2 = check_num(progs, part2, idx-1, reqz2, str(i) + numstr)
+            if ok:
+                return ok, numstr2
         else:
-            assert(op == "eql")
-            if arg1 == 0 and arg2 == 0:
-                vars[instr[1]] = 1
-            elif isinstance(arg1, int) and isinstance(arg2, int):
-                vars[instr[1]] = arg1 == arg2
-            elif isinstance(arg1, int) or isinstance(arg2, int):
-                intval = arg1 if isinstance(arg1, int) else arg2
-                expr = arg2 if isinstance(arg1, int) else arg1
-                if expr[0] == "eql" and  intval not in [0, 1]:
-                    vars[instr[1]] = 0
-                else:
-                    vars[instr[1]] = [op, arg1, arg2]
-            else:                
-                vars[instr[1]] = [op, arg1, arg2]
-    return vars
+            # at the start we must have 0 in z reg
+            assert(reqz2 == 0)
+            return True, str(i) + numstr 
 
+    return False, ""
 
 def run(part2):
     lines = open(sys.argv[1]).read().splitlines()
-    print(lines)
+#    print(lines)
     prog = []
+    progs = []
     for l in lines:
         prog.append(l.split())
+        if l.find("inp") >= 0:
+            progs.append([])
+        progs[-1].append(l.split())
+        
 
-    state = analyze_prog(prog)
-    print(state)
+    ok, num = check_num(progs, part2, 13, 0, "")
+    if ok:
+        print ("Part", "2" if part2 else "1", num, "check", run_prog(prog, num))
+    else:
+        print("Part", "2" if part2 else "1","Failed")
 
-run(0) if len(sys.argv) < 3 or sys.argv[2] == "1" else run(1)
+run(0)
+run(1)
