@@ -57,9 +57,13 @@ func run_prog(idx int, strarr []string, read <-chan int, write chan<- int, wg *s
 			prog[prog[pos+3]] = getp(prog, pos, 1) * getp(prog, pos, 2)
 			pos += 4
 		} else if op == OP_IN {
-			prog[prog[pos+1]] = <-read
+			// fmt.Printf("try read %v\n", idx)
+			r := <-read
+			// fmt.Printf("try read %v %v\n", idx, r)
+			prog[prog[pos+1]] = r
 			pos += 2
 		} else if op == OP_OUT {
+			// fmt.Printf("write %v %v\n", idx, getp(prog, pos, 1))
 			write <- getp(prog, pos, 1)
 			pos += 2
 		} else if op == OP_JMPT {
@@ -105,7 +109,7 @@ func calc_amp(part2 bool, strarr []string) int {
 	for i := range ioch {
 		ioch[i] = make(chan int, 2)
 	}
-	perm := combin.Permutations(MAX_AMP, MAX_AMP)
+	perm := combin.Permutations(MAX_PHASE, MAX_AMP)
 	for _, p := range perm {
 
 		var wg sync.WaitGroup
