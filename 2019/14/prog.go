@@ -11,7 +11,6 @@ type ReactionD struct {
 	outcnt  int
 	inchems []string
 	incnts  []int
-	exess   int
 }
 
 func get_inputs(rd map[string]ReactionD, exess map[string]int, chem string, cnt int, l int) int {
@@ -58,7 +57,7 @@ func main() {
 			ic, _ := strconv.Atoi(ii[0])
 			incnts = append(incnts, ic)
 		}
-		reacts[dst[1]] = ReactionD{outcnt: dstcnt, inchems: inchems, incnts: incnts, exess: 0}
+		reacts[dst[1]] = ReactionD{outcnt: dstcnt, inchems: inchems, incnts: incnts}
 	}
 	cnt := get_inputs(reacts, exess, "FUEL", 1, 0)
 
