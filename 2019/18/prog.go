@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"sort"
 	"strings"
 )
 
@@ -38,63 +37,101 @@ func printm(grid map[[2]int]uint8) {
 	}
 }
 
-func can_pass(obj uint8, keys string) bool {
-	if obj == WALL {
-		return false
-	} else if obj == EMPTY || obj == ENRANCE {
-		return true
-	} else if obj == WALL {
-		return false
-	} else if obj >= MINKEY && obj <= MAXKEY {
-		return true
-	} else if obj >= MINDOOR && obj <= MAXDOOR {
-		diff := MINKEY - MINDOOR
-		for _, k := range keys {
-			if uint8(k)-uint8(diff) == obj {
-				return true
-			}
+func key_to_keyflag(key uint8) int {
+	return (1 << (key - MINKEY))
+}
+
+func keyflag_to_key(key int) uint8 {
+	for k := MINKEY; k <= MAXKEY; k++ {
+		mask := (1 << (k - MINKEY))
+		if key&mask == mask {
+			return uint8(k)
 		}
-		return false
-	} else {
-		panic(fmt.Sprintf("uncnown obj %v", obj))
 	}
+	return 0
+}
+
+func keyflags_to_str(key int) string {
+	ret := ""
+	for i := 0; i < 32; i++ {
+		k := keyflag_to_key(key & (1 << i))
+		if k != 0 {
+			ret += string(k)
+		}
+	}
+	return ret
 }
 
 type SearchD struct {
-	pos   [2]int
-	steps int
-	keys  string
+	pos     [2]int
+	steps   int
+	reqkeys int
+	gotkeys int
 }
 
-func find_path(grid map[[2]int]uint8, src [2]int, dst uint8, keys string) (bool, int, [2]int, string) {
+func find_path(grid map[[2]int]uint8, src [2]int, dst uint8) (bool, int, [2]int, int, int) {
 	visited := make(map[[2]int]bool)
 	movec := [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
 	searcho := make([]SearchD, 0)
-	searcho = append(searcho, SearchD{src, -1, keys})
+	searcho = append(searcho, SearchD{src, -1, 0, 0})
 	for len(searcho) > 0 {
 		sd := searcho[0]
 		sd.steps += 1
-
 		visited[sd.pos] = true
 		if grid[sd.pos] >= MINKEY && grid[sd.pos] <= MAXKEY {
-			if strings.Index(sd.keys, string(grid[sd.pos])) < 0 {
-				sd.keys += string(grid[sd.pos])
+			sd.gotkeys |= key_to_keyflag(grid[sd.pos])
+		}
+		if grid[sd.pos] >= MINDOOR && grid[sd.pos] <= MAXDOOR {
+			doorkey := grid[sd.pos] + uint8(MINKEY-MINDOOR)
+			if (sd.gotkeys & key_to_keyflag(doorkey)) == 0 {
+				sd.reqkeys |= key_to_keyflag(doorkey)
 			}
 		}
 		if v, ok := grid[sd.pos]; ok && v == dst {
-			return true, sd.steps, sd.pos, sd.keys
+			return true, sd.steps, sd.pos, sd.reqkeys, sd.gotkeys
 		}
 		searcho = searcho[1:]
 		for _, m := range movec {
 			npos := [2]int{sd.pos[0] + m[0], sd.pos[1] + m[1]}
 			if _, ok := visited[npos]; !ok {
-				if _, ok := grid[npos]; ok && can_pass(grid[npos], sd.keys) {
-					searcho = append(searcho, SearchD{npos, sd.steps, sd.keys})
+				if _, ok := grid[npos]; ok && grid[npos] != WALL {
+					searcho = append(searcho, SearchD{npos, sd.steps, sd.reqkeys, sd.gotkeys})
 				}
 			}
 		}
 	}
-	return false, 0, [2]int{0, 0}, ""
+	return false, -1, [2]int{0, 0}, 0, 0
+}
+
+type PathCacheKey struct {
+	from [2]int
+	to   uint8
+}
+type PathCacheVal struct {
+	ok      bool
+	npos    [2]int
+	reqkeys int
+	gotkeys int
+	steps   int
+}
+
+func find_path_cached(pathcache map[PathCacheKey]PathCacheVal, grid map[[2]int]uint8, src [2]int, dst uint8, keys int) (bool, int, [2]int, int) {
+	key := PathCacheKey{src, dst}
+	if v, ok := pathcache[key]; ok {
+		if v.ok && (v.reqkeys&keys) == v.reqkeys {
+			return true, v.steps, v.npos, (keys | v.gotkeys)
+		} else {
+			return false, 0, [2]int{0, 0}, 0
+		}
+	} else {
+		ok, nsteps, npos, reqkeys, gotkeys := find_path(grid, src, dst)
+		pathcache[key] = PathCacheVal{ok: ok, npos: npos, reqkeys: reqkeys, gotkeys: gotkeys, steps: nsteps}
+		if ok && (reqkeys&keys) == reqkeys {
+			return ok, nsteps, npos, (keys | gotkeys)
+		} else {
+			return false, 0, [2]int{0, 0}, 0
+		}
+	}
 }
 
 func get_entrances(grid map[[2]int]uint8) [][2]int {
@@ -120,7 +157,7 @@ func get_keys(grid map[[2]int]uint8) string {
 type pq_item struct {
 	pos      [][2]int
 	findkeys string
-	keys     string
+	keys     int
 	steps    int
 	botloc   string
 	// The index is needed by update and is maintained by the heap.Interface methods.
@@ -158,14 +195,6 @@ func (pq *priority_queue) Pop() interface{} {
 	return item
 }
 
-func sort_string(s string) string {
-	r := []rune(s)
-	sort.Slice(r, func(i, j int) bool {
-		return r[i] < r[j]
-	})
-	return string(r)
-}
-
 func replace_char(s string, idx int, c rune) string {
 	r := []rune(s)
 	r[idx] = c
@@ -174,12 +203,13 @@ func replace_char(s string, idx int, c rune) string {
 
 func collect_keys(grid map[[2]int]uint8, pos [][2]int, findkeys string) int {
 	beststates := map[string]int{}
+	pathcache := map[PathCacheKey]PathCacheVal{}
 	pq := make(priority_queue, 0)
 	heap.Init(&pq)
 	heap.Push(&pq, &pq_item{
 		pos:      pos,
 		findkeys: findkeys,
-		keys:     "",
+		keys:     0,
 		// botloc is actually the letter of the key where bot is standing currently
 		// bot will be allways standing on the last key what it picked up
 		botloc: "@@@@",
@@ -191,10 +221,11 @@ func collect_keys(grid map[[2]int]uint8, pos [][2]int, findkeys string) int {
 
 		for _, k := range item.findkeys {
 			for b := 0; b < len(pos); b++ {
-				ok, nsteps, npos, nkeys := find_path(grid, item.pos[b], uint8(k), item.keys)
+				ok, nsteps, npos, nkeys := find_path_cached(pathcache, grid, item.pos[b], uint8(k), item.keys)
 				if ok {
 					botloc := replace_char(item.botloc, b, k)
-					searchstate := botloc + sort_string(nkeys) // state is robot locations + all the keys we have
+					keystr := keyflags_to_str(nkeys)
+					searchstate := botloc + keystr // state is robot locations + all the keys we have
 					currsteps := item.steps + nsteps
 					if _, ok := beststates[searchstate]; !ok {
 						beststates[searchstate] = currsteps
@@ -209,7 +240,7 @@ func collect_keys(grid map[[2]int]uint8, pos [][2]int, findkeys string) int {
 
 					nfindkeys := ""
 					for _, nk := range item.findkeys {
-						if strings.Index(nkeys, string(nk)) < 0 {
+						if key_to_keyflag(uint8(nk))&nkeys == 0 {
 							nfindkeys += string(nk)
 						}
 					}
@@ -238,6 +269,13 @@ func collect_keys(grid map[[2]int]uint8, pos [][2]int, findkeys string) int {
 }
 
 func main() {
+	// f, err := os.Create("prog.prof")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// pprof.StartCPUProfile(f)
+	// defer pprof.StopCPUProfile()
+
 	dat, _ := os.ReadFile(os.Args[1])
 	lines := strings.Split(strings.ReplaceAll(string(dat), "\r", ""), "\n")
 	grid := map[[2]int]uint8{}
