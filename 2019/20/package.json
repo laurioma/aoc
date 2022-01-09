@@ -1,0 +1,16 @@
+{
+  "name": "20",
+  "version": "1.0.0",
+  "description": "npm install -g ts-node typescript npm install  ts-node prog.ts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@algorithm.ts/priority-queue": "^1.0.23",
+    "@types/node": "^17.0.8"
+  }
+}

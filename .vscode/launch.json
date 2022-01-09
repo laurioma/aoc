@@ -23,6 +23,18 @@
             "cwd": "${fileDirname}",
             "program": "${file}",
             "args": [
+                "input.txt"
+            ]
+        },
+        {
+            "name": "Typescript",
+            "type": "node",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": ["${fileDirname}/out/**/*.js"],
+            "args": [
                 "test.txt"
             ]
         }
