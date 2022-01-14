@@ -3,51 +3,23 @@ import time
 import copy
 import re
 import itertools
+import math
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
-def dealnew(cards):
-    return list(reversed(cards))
-
-
-def dealcut(cards, pos):
-    return cards[pos:] + cards[0:pos]
-
-def dealinc(cards, inc):
-    ret = [-1]* len(cards)
-    idx = 0
-    left = 0
-    for i in range(len(cards)):
-        assert (ret[idx] == -1), ret[idx]
-        ret[idx] = cards[i]
-        idx = (idx + inc) % len(cards)
-        if idx == left:
-            idx += 1
-            left = idx
-
-    assert(ret.count(-1) == 0), ret
-    return ret
-
-def dealnew1(sz, idx):
+def dealnew(sz, idx):
     return sz - 1 - idx
 
-def dealcut1(sz, idx, pos):
+def dealcut(sz, idx, pos):
     return (idx - pos) % sz
 
-def dealinc1(sz, idx, inc):
-    ii = 0
-    left = 0
-    for i in range(sz):
-#        print("inc", inc, "idx", idx, "ii", ii, "left", left, "i", i)
-        if i == idx:
-            return ii
+def dealinc(sz, idx, inc):
+    if inc == 0 or inc == 1:
+        return idx
+    assert(sz % inc != 0)
 
-        ii = (ii + inc) % sz
-        if ii == left:
-            ii += 1
-            left = ii
- 
-#    print("ii", ii, "left")
-    assert()
+    roundn = int(idx * inc/sz)
+    return idx * inc - (sz*roundn) 
 
 def dealnew_r(sz, idx):
     return sz - 1 - idx
@@ -55,144 +27,97 @@ def dealnew_r(sz, idx):
 def dealcut_r(sz, idx, pos):
     return (idx + pos) % sz
 
+# inverse of dealinc. n can be found by some tinkering with dealinc
+def dealinc_r_eq(sz, idx, inc, n):
+    return int(idx / inc )+ n * int(sz / inc)
+
 def dealinc_r(sz, idx, inc):
-    ii = 0
-    left = 0
-    for i in range(sz):
-#        print("REV inc", inc, "idx", idx, "ii", ii, "left", left, "i", i)
-        if ii == idx:
-            return i
+    if inc == 0 or idx == 0:
+        return idx
+    assert(sz % inc != 0)
+    n = 0
+    mod = idx % inc
+    modch = mod
+    ret = dealinc_r_eq(sz, idx, inc, 0)
+    if mod != 0:
+        for i in range(inc):
+            szch = sz - (inc - modch)
+            modch = szch % inc
+            if modch == 0:
+                n = i+1
+                for j in range(inc):
+                    ret = dealinc_r_eq(sz, idx, inc, n) + j
+                    ch = dealinc(sz, ret, inc)
+                    if ch == idx:
+                        break
+                break
 
-        ii = (ii + inc) % sz
-        if ii == left:
-            ii += 1
-            left = ii
- 
-#    print("REV", "ii", ii, "left")
-    assert()
-
-def dealnew2(cards):
-    ret = []
-    for i in range(len(cards)):
-        ii = dealnew1(len(cards), i)
-        ret.append(cards[ii])
     return ret
-
-def dealcut2(cards, pos):
-    ret = []
-    for i in range(len(cards)):
-        ii = dealcut1(len(cards), i, pos)
-        ret.append(cards[ii])
-    return ret
-
-def dealinc2(cards, inc):
-    ret = []
-    for i in range(len(cards)):
-        ii = dealinc1(len(cards), i, inc)
-        ret.append(cards[ii])
-    return ret
-
-
-#NUMCARDS = 119315717514047
-NUMCARDS = 10007
-#NUMCARDS = 10
 
 def part1(instr):
-    cards = [i for i in range(NUMCARDS)]
-    print(cards)
-    for i, c in instr:
-        if i == 2:
-            cards = dealinc(cards, c)
-            print("incr", c, cards)
-        elif(i == 1):
-            cards = dealcut(cards, c)
-            print("cut", c, cards)
-        elif i == 0:
-            cards = dealnew(cards)
-            print("new",cards)
-        else:
-            assert(False), "wrong instr %s" % i
-
-    print(cards)
-    if NUMCARDS > 10:
-        print ("RES", cards.index(2019))
-
-def part11(instr):
+    numcards = 10007
     cardp = 2019 # 2558
-#    cardp = 8 #3
     for i, c in instr:
-        opos = cardp
+        # opos = cardp
         if i == 2:
-            cardp = dealinc1(NUMCARDS, cardp, c)
-            print("incr", c, opos, "->", cardp)
+            cardp = dealinc(numcards, cardp, c)
+            # print("incr", c, opos, "->", cardp)
         elif(i == 1):
-            cardp = dealcut1(NUMCARDS, cardp, c)
-            print("cut", c, opos, "->", cardp)
+            cardp = dealcut(numcards, cardp, c)
+            # print("cut", c, opos, "->", cardp)
         elif i == 0:
-            cardp = dealnew1(NUMCARDS, cardp)
-            print("new", opos, "->", cardp)
+            cardp = dealnew(numcards, cardp)
+            # print("new", opos, "->", cardp)
         else:
             assert(False), "wrong instr %s" % i
 
-    print("Final pos", cardp)
+    print("Part1", cardp)
 
-
-
-#def generate(idx, instr):
-#    for i,c in reversed(instr):
-
+# takes loong time
 def part2(instr):
-    cardp = 2558 # 2019
-#    cardp = 3 #8
-#    cardp = 2020
-    sol = set()
-    for r in range(1000):
+    numcards = 119315717514047
+    cardp = 2020 
+    times=101741582076661
+    for r in range(times):
         for i, c in reversed(instr):
-            opos = cardp
             if i == 2:
-                cardp = dealinc_r(NUMCARDS, cardp, c)
+                cardp = dealinc_r(numcards, cardp, c)
     #            print("incr", c, opos, "->", cardp)
             elif(i == 1):
-                cardp = dealcut_r(NUMCARDS, cardp, c)
+                cardp = dealcut_r(numcards, cardp, c)
     #            print("cut", c, opos, "->", cardp)
             elif i == 0:
-                cardp = dealnew_r(NUMCARDS, cardp)
+                cardp = dealnew_r(numcards, cardp)
     #            print("new", opos, "->", cardp)
             else:
                 assert(False), "wrong instr %s" % i
-        if cardp in sol:
-            print("Was!!")
-        sol.add(cardp)
-        print(r, cardp)
 
-    print("Final pos", cardp)
+    print("Part2", cardp)
 
+# should take less time but still too long
+def part21(instr):
+    numcards = 119315717514047
+    cardp = 2020
+    # The positions start from beginning after numcards rounds so we can run forward from this point to numcards
+    times = 119315717514047 - 101741582076661 
+    for r in range(times):
+        for i, c in instr:
+            if i == 2:
+                cardp = dealinc(numcards, cardp, c)
+            elif(i == 1):
+                cardp = dealcut(numcards, cardp, c)
+            elif i == 0:
+                cardp = dealnew(numcards, cardp)
+            else:
+                assert(False), "wrong instr %s" % i
 
-def test():
-    print("test")
+    print("Part2", cardp)
 
-    cc = [x for x in range(NUMCARDS)]
-    ccc = dealinc(cc, 4)
-    print("dealinc 4", cc, "->", ccc)
-    for p in range(NUMCARDS):
-        for i in range(10):
-            print ("test", i, p)
-            ii = dealinc1(NUMCARDS, i, p)
-            print ("MOVED ", i, ii)
-            iii = dealinc_r(NUMCARDS, ii, p)
-            print("REMOVED ", ii, iii)
-            assert(iii == i)
-
-
-# find all lines containi
-def execute(file, partnr):
-    global nump
+def run(file):
     data = ""
     with open(file) as f:
         data = f.read()
 
-#    test()
-#    return
     rows = data.split('\n')
 
     instr = []
@@ -212,14 +137,11 @@ def execute(file, partnr):
                     instr.append([0, 0])
                 else:
                     assert(False), "wrong line %s" % l
-    if partnr == 0:
-        part1(instr)
-    elif partnr == 1:
-        part11(instr)
-    else:
-        part2(instr)
-    
+
+    part1(instr)
+    # part2(instr)
+    # part21(instr)
+    print ("Part2", '?')
+
 f = "input.txt" if len(sys.argv) < 2 else sys.argv[1]
-p2 = 0 if len(sys.argv) < 3 else int(sys.argv[2])
-print ("P2", p2)
-execute(f, p2)
+run(f)
