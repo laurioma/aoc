@@ -21,9 +21,11 @@ func calc_amp(part2 bool, strarr []string) int {
 		for i := range ioch {
 			ioch[i] = make(chan int, 2)
 		}
-		var wg sync.WaitGroup
+		var runwg sync.WaitGroup
+		var wg intcode.RunProgWaitGroups
+		wg.Run = &runwg
 		for amp := 0; amp < MAX_AMP; amp++ {
-			wg.Add(1)
+			runwg.Add(1)
 			// phase
 			if part2 {
 				ioch[amp] <- p[amp] + 5
@@ -37,9 +39,10 @@ func calc_amp(part2 bool, strarr []string) int {
 			if nextamp >= MAX_AMP {
 				nextamp = 0
 			}
-			go intcode.RunProgWg(strarr, ioch[amp], ioch[nextamp], &wg)
+
+			go intcode.RunProgWG(strarr, ioch[amp], ioch[nextamp], &wg)
 		}
-		wg.Wait()
+		runwg.Wait()
 		res := <-ioch[0]
 		if max < res {
 			max = res

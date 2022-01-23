@@ -57,9 +57,19 @@ func putp(prog map[int]int, pos, pidx, relbase, val int) {
 	prog[wra] = val
 }
 
-func RunProg(strarr []string, read <-chan int, write chan<- int) {
+// for sure all the assignments can be solved without parallelism but using goroutines and channels here just for learning
+type RunProgWaitGroups struct {
+	Rd  *sync.WaitGroup
+	Wr  *sync.WaitGroup
+	Run *sync.WaitGroup
+}
+
+func RunProgWG(progs []string, read <-chan int, write chan<- int, wg *RunProgWaitGroups) {
+	if wg.Run != nil {
+		defer wg.Run.Done()
+	}
 	prog := make(map[int]int)
-	for i, s := range strarr {
+	for i, s := range progs {
 		j, _ := strconv.Atoi(s)
 		prog[i] = j
 	}
@@ -79,10 +89,16 @@ func RunProg(strarr []string, read <-chan int, write chan<- int) {
 			putp(prog, pos, 3, relbase, res)
 			pos += 4
 		} else if op == OP_IN {
+			if wg.Rd != nil {
+				wg.Rd.Done()
+			}
 			r := <-read
 			putp(prog, pos, 1, relbase, r)
 			pos += 2
 		} else if op == OP_OUT {
+			if wg.Wr != nil {
+				wg.Wr.Done()
+			}
 			write <- getp(prog, pos, 1, relbase)
 			pos += 2
 		} else if op == OP_JMPT {
@@ -125,7 +141,7 @@ func RunProg(strarr []string, read <-chan int, write chan<- int) {
 	}
 }
 
-func RunProgWg(strarr []string, read <-chan int, write chan<- int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	RunProg(strarr, read, write)
+func RunProg(prog []string, read <-chan int, write chan<- int) {
+	var wg RunProgWaitGroups
+	RunProgWG(prog, read, write, &wg)
 }
