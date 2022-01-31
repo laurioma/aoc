@@ -84,7 +84,7 @@ function count_outer(grids: Map<number, string[][]>, level: number, pos: [number
     return 0
 }
 
-function run_sim2(grids: Map<number, string[][]>, level, maxlevel, up, down: boolean) {
+function run_sim2(grids: Map<number, string[][]>, level, maxlevel: number, up, down: boolean) {
     let sz = grids.get(0)[0].length
     if (!grids.has(level)) {
         grids.set(level, new Array(sz).fill(null).map(() => new Array(sz).fill('.')))
