@@ -27,6 +27,22 @@
             ]
         },
         {
+            "name": "Rust: Current File",
+            "type": "lldb",
+            "request": "launch",
+            "cwd": "${fileDirname}",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=prog4",
+                    "--package=aoc2018"
+                ]
+            },
+            "args": [
+                "input1.txt"
+            ]
+        },
+        {
             "name": "Typescript",
             "type": "node",
             "request": "launch",

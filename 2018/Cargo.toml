@@ -1,0 +1,30 @@
+[package]
+name = "aoc2018"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name="prog1"
+path = "1/prog.rs"
+
+[[bin]]
+name="prog2"
+path = "2/prog.rs"
+
+[[bin]]
+name="prog3"
+path = "3/prog.rs"
+
+[[bin]]
+name="prog4"
+path = "4/prog.rs"
+
+[[bin]]
+name="prog5"
+path = "5/prog.rs"
+
+[dependencies]
+regex = "1"
+itertools = "0.10"
