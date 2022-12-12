@@ -1,5 +1,4 @@
 import sys
-import heapq
 
 def printm(matrix):
     for r in matrix:
@@ -7,11 +6,11 @@ def printm(matrix):
             print(c, end='')
         print("")
 
-def dijkstra(mat, start, end):
+def bfs(mat, start, end):
     visited = set()
     q = [(0, start)]
     while q:
-        (cost, coord) = heapq.heappop(q)
+        (cost, coord) = q.pop(0)
         if coord not in visited:
             visited.add(coord)
 
@@ -24,7 +23,7 @@ def dijkstra(mat, start, end):
                 y = coord[1] + d[1]
                 if 0 <= x < len(mat[0]) and 0 <= y < len(mat) and (x, y) not in visited and ord(mat[y][x]) - ord(mat[coord[1]][coord[0]]) <= 1:
                     nextcost = cost + 1
-                    heapq.heappush(q, (nextcost, (x, y)))
+                    q.append((nextcost, (x, y)))
     return -1
 
 MYPOS = 'S'
@@ -44,7 +43,7 @@ def run():
                 target = (c, r)
                 matrix[r][c] = 'z'
 
-    cost = dijkstra(matrix, mypos, target)
+    cost = bfs(matrix, mypos, target)
     print ('Part1', cost)
 
     startpos = []
@@ -55,7 +54,7 @@ def run():
 
     shortest = sys.maxsize
     for p in startpos:
-        cost = dijkstra(matrix, p, target)
+        cost = bfs(matrix, p, target)
         if cost < shortest and cost != -1:
             shortest = cost 
     print ('Part2 ', shortest)
