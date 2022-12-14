@@ -6,21 +6,19 @@ EQ = 0
 WRONG = 1
 
 def comp(l1, l2):
-    if isinstance(l1, list) and isinstance(l2, list):
+    if isinstance(l1, int) and isinstance(l2, int):
+        # left is bigger
+        if l1 > l2:
+            return WRONG
+        elif l1 < l2:
+            return RIGHT
+        else:
+            return EQ
+    elif isinstance(l1, list) and isinstance(l2, list):
         for i in range(len(l1)):
             # right run out first
             if len(l2) <= i:
                 return WRONG
-            if isinstance(l1[i], int) and isinstance(l2[i], int):
-                # left is bigger
-                if l1[i] > l2[i]:
-                    return WRONG
-                elif l1[i] < l2[i]:
-                    return RIGHT
-            elif isinstance(l1[i], list) and isinstance(l2[i], list):
-                r = comp(l1[i], l2[i])
-                if r != EQ:
-                    return r
             elif isinstance(l1[i], list) and isinstance(l2[i], int):
                 r = comp(l1[i], [l2[i]])
                 if r != EQ:
@@ -30,15 +28,19 @@ def comp(l1, l2):
                 if r != EQ:
                     return r
             else:
-                assert(False)
+                r = comp(l1[i], l2[i])
+                if r != EQ:
+                    return r
         # left run out first
         if len(l1) < len(l2):
             return RIGHT
         assert(len(l1) == len(l2))
         return EQ
+    else:
+        assert(False)
 
 def run():
-    lineg = open(sys.argv[1]).read().replace('\r','').split('\n\n')
+    lineg = open(sys.argv[1]).read().split('\n\n')
     rightidx = []
     for (i,l) in enumerate(lineg):
         ll = l.splitlines()
@@ -50,7 +52,7 @@ def run():
 
     print ('Part1', sum(rightidx))
 
-    lines = open(sys.argv[1]).read().replace('\r','').replace('\n\n','\n').splitlines()
+    lines = open(sys.argv[1]).read().replace('\n\n','\n').splitlines()
     exprs = []
     for l in lines:
         exprs.append(eval(l))
