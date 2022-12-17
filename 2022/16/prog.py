@@ -42,48 +42,43 @@ def openbrute(movemat, valve, opened, time_limit, time, open_rate, score, maxsco
             openbrute(movemat, m[0], opened, time_limit, time+tdelta, totalopen, newscore, maxscore)
     opened.remove(valve)
 
-def call_openbrute2(movemat, move1, move2, opened, time_limit, time, open_rate, score, maxscore):
+def calc_new_params(move1, move2, time_limit, time, open_rate, score):
     # open move1
     if move1[2] < move2[2]:
         newr = move1[1]
         tdelta = move1[2]+1
-        totalopen = open_rate + newr
         tremain = (time_limit - time - tdelta)
         newscore = score + newr * tremain
         # print("newscore m1", move1, move2, newr, "tremain", tremain, "s", score, "ns", newscore)
         move2 = (move2[0], move2[1], move2[2]- tdelta)
-        openbrute2(movemat, move1, move2, True, False, opened, time_limit, time+tdelta, totalopen, newscore, maxscore)
+        return (move1, move2, True, False, newscore, time+tdelta, open_rate + newr)
     # open move1 & move2
     elif move1[2] == move2[2]:
         newr = move1[1] + move2[1]
         tdelta = move1[2]+1
-        totalopen = open_rate + newr
         tremain = (time_limit - time - tdelta)
         newscore = score + newr * tremain
-        # print("newscore m1m2", move1, move2, newr, "tremain", tremain, "s", score, "ns", newscore)
-        openbrute2(movemat, move1, move2, True, True, opened, time_limit, time+tdelta, totalopen, newscore, maxscore)
+        return (move1, move2, True, True, newscore, time+tdelta, open_rate + newr)
     # open move2
     else:
         newr = move2[1]
         tdelta = move2[2]+1
-        totalopen = open_rate + newr
         tremain = (time_limit - time - tdelta)
         newscore = score + newr * tremain
         # print("newscore m2", move1, move2, newr, "tremain", tremain, "s", score, "ns", newscore)
         move1 = (move1[0], move1[1], move1[2]- tdelta)
-        openbrute2(movemat, move1, move2, False, True, opened, time_limit, time+tdelta, totalopen, newscore, maxscore)
+        return (move1, move2, False, True, newscore, time+tdelta, open_rate + newr)
+
 
 # limit combinations by limiting time, probably doesn't work for all inputs
 time_cutoff = 2
 
 def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time, open_rate, score, maxscore):
     global time_cutoff
-    # print("openbrute2", move1, finish1, move2, finish2, opened + [move1[0], move2[0]], "r:", open_rate, "s:", score, "t:", time, (time_limit-time), "l", level)
     if maxscore[0] < score:
         print("newmax", maxscore[0], score, open_rate, opened, [move1[0], move2[0]], finish1, finish2,  time)
         maxscore[0] = score
     if time >= (time_limit - time_cutoff):
-        # print("tmo", opened, score)
         return -1
 
     # move 2nd
@@ -94,10 +89,11 @@ def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time
             if move1[0] == m2[0]:
                 continue
             if m2[0] not in opened:
-                call_openbrute2(movemat, move1, m2, opened, time_limit, time, open_rate, score, maxscore)
+                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(move1, m2, time_limit, time, open_rate, score)
+                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
             else:
-                # print("empty5")
-                call_openbrute2(movemat,  move1, ("DD", 0, 1000),  opened, time_limit, time, open_rate, score, maxscore)
+                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(move1, ("DD", 0, 1000), time_limit, time, open_rate, score)
+                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
         opened.remove(move2[0])
     # move 1st
     elif not finish2:
@@ -108,10 +104,11 @@ def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time
             if move2[0] == m1[0]:
                 continue
             if m1[0] not in opened:
-                call_openbrute2(movemat,  m1, move2, opened, time_limit, time, open_rate, score, maxscore)
+                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(m1, move2, time_limit, time, open_rate, score)
+                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
             else:
-                # print("empty6")
-                call_openbrute2(movemat,  ("DD", 0, 1000), move2, opened, time_limit, time, open_rate, score, maxscore)
+                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(("DD", 0, 1000), move2, time_limit, time, open_rate, score)
+                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
         opened.remove(move1[0])
     # move both
     else:
@@ -120,16 +117,14 @@ def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time
         moves2 = movemat[move2[0]]
         opened.add(move2[0])
 
-        if len(moves2) == 0 and len(moves2) == 0:
-            return
-        else:
-            for m1 in moves1:
-                if m1[0] not in opened:
-                    for m2 in moves2:
-                        if m1[0] == m2[0]:
-                            continue
-                        if m2[0] not in opened:
-                            call_openbrute2(movemat, m1, m2, opened, time_limit, time, open_rate, score, maxscore)
+        for m1 in moves1:
+            if m1[0] not in opened:
+                for m2 in moves2:
+                    if m1[0] == m2[0]:
+                        continue
+                    if m2[0] not in opened:
+                        (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(m1, m2, time_limit, time, open_rate, score)
+                        openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
                             
         opened.remove(move1[0])
         if move2[0] in opened:
