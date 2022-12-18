@@ -1,9 +1,5 @@
 import sys
 import re
-import heapq
-import itertools
-import copy
-import cProfile
 
 # move: (valve, rate, tdelta)
 def get_moves(mat, start, unlocked):
@@ -22,7 +18,7 @@ def get_moves(mat, start, unlocked):
     moves1 = sorted(moves, key=lambda x: x[1], reverse=True)
     return moves1
 
-def openbrute(movemat, valve, opened, time_limit, time, open_rate, score, maxscore):
+def openbrute(movemat, valve, opened, time_limit, time, open_rate, score, maxscore, skipgates):
     if maxscore[0] < score:
         # print("newmax", maxscore, score, open_rate, opened)
         maxscore[0] = score
@@ -32,85 +28,20 @@ def openbrute(movemat, valve, opened, time_limit, time, open_rate, score, maxsco
 
     moves = movemat[valve]
     opened.add(valve)
-    for  m in moves:
+    for m in moves:
+        if m[0] in skipgates:
+            continue
         if m[0] not in opened:
             newr = m[1]
             tdelta = m[2]+1
             totalopen = open_rate + newr
             tremain = (time_limit - time - tdelta)
             newscore = score + newr * tremain
-            openbrute(movemat, m[0], opened, time_limit, time+tdelta, totalopen, newscore, maxscore)
+
+            openbrute(movemat, m[0], opened, time_limit, time+tdelta, totalopen, newscore, maxscore, skipgates)
     opened.remove(valve)
 
-def calc_new_params(move1, move2, time_limit, time, open_rate, score):
-    # open move1
-    if move1[2] < move2[2]:
-        newr = move1[1]
-        tdelta = move1[2]+1
-        tremain = (time_limit - time - tdelta)
-        newscore = score + newr * tremain
-        move2 = (move2[0], move2[1], move2[2]- tdelta)
-        return (move1, move2, True, False, newscore, time+tdelta, open_rate + newr)
-    # open move1 & move2
-    elif move1[2] == move2[2]:
-        newr = move1[1] + move2[1]
-        tdelta = move1[2]+1
-        tremain = (time_limit - time - tdelta)
-        newscore = score + newr * tremain
-        return (move1, move2, True, True, newscore, time+tdelta, open_rate + newr)
-    # open move2
-    else:
-        newr = move2[1]
-        tdelta = move2[2]+1
-        tremain = (time_limit - time - tdelta)
-        newscore = score + newr * tremain
-        move1 = (move1[0], move1[1], move1[2]- tdelta)
-        return (move1, move2, False, True, newscore, time+tdelta, open_rate + newr)
-
-
-# limit combinations by limiting time - may need to tweak this..
-time_cutoff = 2
-
-def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time, open_rate, score, maxscore):
-    global time_cutoff
-    if maxscore[0] < score:
-        print("newmax", maxscore[0], score, open_rate, opened, [move1[0], move2[0]], finish1, finish2,  time)
-        maxscore[0] = score
-    if time >= (time_limit - time_cutoff):
-        return -1
-
-    moves1 = movemat[move1[0]]
-    if not finish1:
-        moves1 = [move1]
-    else:
-        opened.add(move1[0])
-    
-    moves2 = movemat[move2[0]]
-    if not finish2:
-        moves2 = [move2]
-    else:
-        opened.add(move2[0])
-
-    for m1 in moves1:
-        for m2 in moves2:
-            if m1[0] == m2[0]:
-                continue
-            # if either run out of moves, add dummy move with takes long time
-            if m1[0] in opened:
-                m1 =  ("AA", 0, 1000)
-            if m2[0] in opened:
-                m2 =  ("AA", 0, 1000)
-            (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(m1, m2, time_limit, time, open_rate, score)
-            openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
-
-    if finish1:
-        opened.remove(move1[0])
-    if finish2:
-        if move2[0] in opened:
-            opened.remove(move2[0])
-
 def run():
-    global time_cutoff
     lines = open(sys.argv[1]).read().splitlines()
     mat = {}
     for l in lines:
@@ -123,20 +54,36 @@ def run():
         mat[valve] = (rate, dst)
 
     moves = {}
+    mkeys = []
     for k in mat.keys():
+        if mat[k][0] != 0:
+            mkeys.append(k)
         if mat[k][0] != 0 or k == 'AA':
             moves[k] = get_moves(mat, k, set())
 
-    opened = set()
-    maxscore=[0]
-    openbrute(moves, 'AA', opened, 30, 0, 0, 0, maxscore)
+
+    maxscore = [0]
+    openbrute(moves, 'AA', set(), 30, 0, 0, 0, maxscore, set())
     print ('Part1', maxscore[0])
 
-    maxscore=[0]
-    opened = set()
-    openbrute2(moves, ("AA", 0, 0), ("AA", 0, 0), True, True, opened, 26, 0, 0, 0, maxscore)
+    combinations = pow(2, len(mkeys))
 
-    print ('Part2', maxscore[0], time_cutoff)
+    maxscore = 0
+    for i in range(combinations):
+        skipme = set()
+        skipel = set()
+        for (ki, k) in enumerate(mkeys):
+            if i & pow(2, ki):
+                skipme.add(k)
+            else:
+                skipel.add(k)
+
+        maxscore1 = [0]
+        openbrute(moves, 'AA', set(), 26, 0, 0, 0, maxscore1, skipme)
+        maxscore2 = [0]
+        openbrute(moves, 'AA', set(), 26, 0, 0, 0, maxscore2, skipel)
+        maxscore = max(maxscore, maxscore1[0]+maxscore2[0])
+    print ('Part2', maxscore)
 
 run()
 
