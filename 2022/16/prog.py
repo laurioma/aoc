@@ -49,7 +49,6 @@ def calc_new_params(move1, move2, time_limit, time, open_rate, score):
         tdelta = move1[2]+1
         tremain = (time_limit - time - tdelta)
         newscore = score + newr * tremain
-        # print("newscore m1", move1, move2, newr, "tremain", tremain, "s", score, "ns", newscore)
         move2 = (move2[0], move2[1], move2[2]- tdelta)
         return (move1, move2, True, False, newscore, time+tdelta, open_rate + newr)
     # open move1 & move2
@@ -65,12 +64,11 @@ def calc_new_params(move1, move2, time_limit, time, open_rate, score):
         tdelta = move2[2]+1
         tremain = (time_limit - time - tdelta)
         newscore = score + newr * tremain
-        # print("newscore m2", move1, move2, newr, "tremain", tremain, "s", score, "ns", newscore)
         move1 = (move1[0], move1[1], move1[2]- tdelta)
         return (move1, move2, False, True, newscore, time+tdelta, open_rate + newr)
 
 
-# limit combinations by limiting time, probably doesn't work for all inputs
+# limit combinations by limiting time - may need to tweak this..
 time_cutoff = 2
 
 def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time, open_rate, score, maxscore):
@@ -81,52 +79,33 @@ def openbrute2(movemat, move1, move2, finish1, finish2, opened, time_limit, time
     if time >= (time_limit - time_cutoff):
         return -1
 
-    # move 2nd
+    moves1 = movemat[move1[0]]
     if not finish1:
-        moves2 = movemat[move2[0]]
-        opened.add(move2[0])
-        for m2 in moves2:
-            if move1[0] == m2[0]:
-                continue
-            if m2[0] not in opened:
-                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(move1, m2, time_limit, time, open_rate, score)
-                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
-            else:
-                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(move1, ("DD", 0, 1000), time_limit, time, open_rate, score)
-                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
-        opened.remove(move2[0])
-    # move 1st
-    elif not finish2:
-        moves1 = movemat[move1[0]]
-        opened.add(move1[0])
-
-        for m1 in moves1:
-            if move2[0] == m1[0]:
-                continue
-            if m1[0] not in opened:
-                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(m1, move2, time_limit, time, open_rate, score)
-                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
-            else:
-                (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(("DD", 0, 1000), move2, time_limit, time, open_rate, score)
-                openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
-        opened.remove(move1[0])
-    # move both
+        moves1 = [move1]
     else:
-        moves1 = movemat[move1[0]]
         opened.add(move1[0])
-        moves2 = movemat[move2[0]]
+    
+    moves2 = movemat[move2[0]]
+    if not finish2:
+        moves2 = [move2]
+    else:
         opened.add(move2[0])
 
-        for m1 in moves1:
-            if m1[0] not in opened:
-                for m2 in moves2:
-                    if m1[0] == m2[0]:
-                        continue
-                    if m2[0] not in opened:
-                        (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(m1, m2, time_limit, time, open_rate, score)
-                        openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
-                            
+    for m1 in moves1:
+        for m2 in moves2:
+            if m1[0] == m2[0]:
+                continue
+            # if either run out of moves, add dummy move with takes long time
+            if m1[0] in opened:
+                m1 =  ("AA", 0, 1000)
+            if m2[0] in opened:
+                m2 =  ("AA", 0, 1000)
+            (m1n, m2n, f1, f2, scoren, timen, openraten) = calc_new_params(m1, m2, time_limit, time, open_rate, score)
+            openbrute2(movemat, m1n, m2n, f1, f2, opened, time_limit, timen, openraten, scoren, maxscore)
+
+    if finish1:
         opened.remove(move1[0])
+    if finish2:
         if move2[0] in opened:
             opened.remove(move2[0])
 
