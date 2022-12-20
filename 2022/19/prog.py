@@ -1,12 +1,10 @@
 import sys
 import re
 
-def run_until_next(cache, bp, r1, r2, r3, r4, res1, res2, res3, res4, tryrobot, minute, maxlevel, level, chk):
+def run_until_next(cache, bp, r1, r2, r3, r4, res1, res2, res3, res4, tryrobot, minute, chk):
     maxres = 0
     robots = [r1, r2, r3, r4]
     resources = [res1, res2, res3, res4]
-    if maxlevel >= 0 and level > maxlevel:
-        return -1
 
     robot_tried = False
     while minute > 0 and not robot_tried:
@@ -38,11 +36,14 @@ def run_until_next(cache, bp, r1, r2, r3, r4, res1, res2, res3, res4, tryrobot, 
 
     if robot_tried:
         for r in range(3):
+            # jp optimization: don't create more robots than max consumption per turn
+            if robots[r] > max(bp[0][r], bp[1][r], bp[2][r], bp[3][r]):
+                continue
             key = (robots[0], robots[1], robots[2], robots[3], resources[0], resources[1], resources[2], resources[3], minute, r)
             if key in cache:
                 res = cache[key]
             else:
-                res = run_until_next(cache, bp, robots[0], robots[1], robots[2], robots[3], resources[0], resources[1], resources[2], resources[3], r, minute, maxlevel, level+1, chk)
+                res = run_until_next(cache, bp, robots[0], robots[1], robots[2], robots[3], resources[0], resources[1], resources[2], resources[3], r, minute, chk)
                 cache[key] = res
 
             if maxres < res:
@@ -53,11 +54,11 @@ def run_until_next(cache, bp, r1, r2, r3, r4, res1, res2, res3, res4, tryrobot, 
 
     return maxres
 
-def run_simulation(bp, chk, maxlevel, time_limit):
+def run_simulation(bp, chk, time_limit):
     cache = {}
     maxres = 0
     for r in range(2): # no point to try to make obsidians in 1st round
-        res = run_until_next(cache, bp, 1,0,0,0, 0,0,0,0, r, time_limit, maxlevel, 0, chk)
+        res = run_until_next(cache, bp, 1,0,0,0, 0,0,0,0, r, time_limit, chk)
         if maxres < res:
             maxres = res
     return maxres
@@ -70,30 +71,27 @@ def run():
         nrs = re.findall("(\d+)", l)
         nrsi = list(map(int, nrs))
         bps.append([[nrsi[1],0,0],  [nrsi[2],0,0], [nrsi[3], nrsi[4],0], [nrsi[5], 0, nrsi[6]]])
-
     res = 0
-    max_level = -1
     time_limit=24
     for bpi, bp in enumerate(bps):
         chk = [0]
-        maxobs = run_simulation(bp, chk, max_level, time_limit)
-        print(bpi, "got max", maxobs, chk, max_level, time_limit)
+        maxobs = run_simulation(bp, chk, time_limit)
+        print(bpi, "got max", maxobs, chk, time_limit)
         res += (bpi+1)*maxobs
-    print("Part1", res, max_level)
+    print("Part1", res)
 
     res = 1
-    max_level=22
     time_limit=32
     for bpi, bp in enumerate(bps):
         chk = [0]
-        maxobs = run_simulation(bp, chk, max_level, time_limit)
+        maxobs = run_simulation(bp, chk, time_limit)
         print(bpi, "got max", maxobs, chk)
 
         res *= maxobs
         if bpi == 2:
             break
 
-    print("Part2: ", res, max_level)
+    print("Part2: ", res)
 
 run()
 
