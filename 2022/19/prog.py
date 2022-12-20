@@ -1,18 +1,17 @@
 import sys
 import re
 
-def run_until_next(cache, bp, robots, resources, tryrobot, minute, maxlevel, level, chk, time_limit):
+def run_until_next(cache, bp, r1, r2, r3, r4, res1, res2, res3, res4, tryrobot, minute, maxlevel, level, chk):
     maxres = 0
-    robots_diff=[0,0,0,0]
-    resources_diff = [0,0,0,0]
-    
+    robots = [r1, r2, r3, r4]
+    resources = [res1, res2, res3, res4]
     if maxlevel >= 0 and level > maxlevel:
         return -1
 
     robot_tried = False
-    while minute < time_limit and not robot_tried:
+    while minute > 0 and not robot_tried:
         chk[0] +=1
-        minute += 1
+        minute -= 1
         new_robot = -1
         # always try to make geode robot asap
         for tryr in [3, tryrobot]:
@@ -25,7 +24,6 @@ def run_until_next(cache, bp, robots, resources, tryrobot, minute, maxlevel, lev
             if has_enough:
                 for resi in range(len(resources)-1):
                     resources[resi] -= bp[tryr][resi]
-                    resources_diff[resi] -= bp[tryr][resi]
                 new_robot = tryr
 
                 if tryr != 3:
@@ -34,9 +32,8 @@ def run_until_next(cache, bp, robots, resources, tryrobot, minute, maxlevel, lev
 
         for ri, r in enumerate(robots):
             resources[ri] += r
-            resources_diff[ri] += r
+ 
         if new_robot >= 0:
-            robots_diff[new_robot]+=1
             robots[new_robot]+=1
 
     if robot_tried:
@@ -45,29 +42,22 @@ def run_until_next(cache, bp, robots, resources, tryrobot, minute, maxlevel, lev
             if key in cache:
                 res = cache[key]
             else:
-                res = run_until_next(cache, bp, robots, resources, r, minute, maxlevel, level+1, chk, time_limit)
+                res = run_until_next(cache, bp, robots[0], robots[1], robots[2], robots[3], resources[0], resources[1], resources[2], resources[3], r, minute, maxlevel, level+1, chk)
                 cache[key] = res
 
             if maxres < res:
                 maxres = res
     else:
-        assert(minute == time_limit)
+        assert(minute == 0)
         maxres = resources[3]
 
-    for i in range(4):
-        robots[i] -= robots_diff[i]
-        assert(robots[i] >= 0)
-        resources[i] -= resources_diff[i]
-        assert(resources[i] >= 0)
     return maxres
 
 def run_simulation(bp, chk, maxlevel, time_limit):
     cache = {}
     maxres = 0
-    robots=[1,0,0,0]
-    resources = [0,0,0,0]
     for r in range(2): # no point to try to make obsidians in 1st round
-        res = run_until_next(cache, bp, robots, resources, r, 0, maxlevel, 0, chk, time_limit)
+        res = run_until_next(cache, bp, 1,0,0,0, 0,0,0,0, r, time_limit, maxlevel, 0, chk)
         if maxres < res:
             maxres = res
     return maxres
