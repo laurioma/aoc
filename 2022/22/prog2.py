@@ -65,7 +65,7 @@ def wrap(x,y,side, dim, facing):
         elif side == 3:
             return (0, y, 5), FACING_R
         elif side == 4:
-            return (y, x, 6), FACING_U
+            return (y, dim-1, 6), FACING_U
         elif side == 5:
             return (dim-1, dim-1 - y, 6), FACING_L
         elif side == 6:
@@ -216,7 +216,7 @@ def run():
         #printm(cube, align, dim, currpos, path)
 
     col, row = abspos(align, dim, currpos)
-    print("Part1", (row) * 1000 + (col+1)*4+facing, facing)
+    print("Part2", (row) * 1000 + (col+1)*4+facing)
 
 run()
 
