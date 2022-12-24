@@ -62,46 +62,27 @@ def get_blizzards(matrix, w, h):
             blizzards[(x,y)].append(matrix[y][x])
     return blizzards
 
-# avoid adding duplicates
-def add_if_not_there(q, qset, pos, round):
-    if not (pos, round) in qset:    
-        qset.add((pos, round))
-        q.append((pos, round))
-
 def bfs(blz,w,h, start, end):
-    blzrounds = {}
-    qset = set()
-    q = [(start, 0)]
-    qset.add((start,0))
-    blzrounds[0] = blz
-    while q:
-        (coord, round) = q.pop(0)
-        qset.remove((coord, round))
-        blz = blzrounds[round]
+    scoords=set([start])
+    for round in range(10000):
+        nscoords=set()
+        for coord in scoords:
+            #stay in place
+            if len(blz[coord]) == 0:
+                nscoords.add(coord)
 
-        if coord == end:
-            return round, blz
+            #move UDLW
+            dirs = [(-1, 0), (0, -1), (0, 1), (1, 0)]
+            for d in dirs:
+                x = coord[0] + d[0]
+                y = coord[1] + d[1]
+                if (x,y) == end:
+                    return round, blz
+                if 1 <= x <= w-2 and 1 <= y <= h-2 and len(blz[(x,y)]) == 0:
+                    nscoords.add((x,y))
+        blz = step(blz,w,h)
+        scoords = nscoords
 
-        nround = round + 1
-
-        if nround not in blzrounds:            
-            blz = step(blz,w,h)
-            blzrounds[nround] = blz
-        else:
-            blz = blzrounds[nround]
-
-        #stay in place
-        if len(blz[coord]) == 0:
-            add_if_not_there(q, qset, coord, nround)
-
-        #move UDLW
-        dirs = [(-1, 0), (0, -1), (0, 1), (1, 0)]
-        for d in dirs:
-            x = coord[0] + d[0]
-            y = coord[1] + d[1]
-
-            if (1 <= x <= w-2 and 1 <= y <= h-2 or (x,y)==end) and len(blz[(x,y)]) == 0:
-                add_if_not_there(q, qset, (x, y), nround)
     return -1, {}
 
 def run():
@@ -116,7 +97,6 @@ def run():
     rounds, blz = bfs(blz, w,h, start, end)
     assert(rounds > 0)
     print("Part1", rounds)
-
     rounds2, blz = bfs(blz, w,h, end, start)
     assert(rounds2 > 0)
     rounds3, blz = bfs(blz, w,h, start, end)
