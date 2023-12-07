@@ -1,11 +1,19 @@
 import sys 
 from collections import defaultdict
 
-def ctype(c):
+def ctype(c, jokker):
     cc = defaultdict(lambda:0)
+    jc = 0
     for char in c:
-        cc[char] += 1
+        if jokker and char == 'J':
+            jc += 1
+        else:
+            cc[char] += 1
     scc = sorted(cc.values(), reverse=True)
+    if jokker:
+        if len(scc) == 0:
+            scc.append(0)
+        scc[0] += jc
     if scc[0] == 5:
         return 7
     if scc[0] == 4:
@@ -36,7 +44,7 @@ def subscore(card, cardtypes):
     return res
 
 def score(card):
-    s1 = ctype(card[0])
+    s1 = ctype(card[0], False)
     s2 = subscore(card[0], cardtypes)
     return s1 * 100000000000 + s2
 
@@ -56,23 +64,8 @@ def part1():
 
 cardtypes2 = ['A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J']
 
-def ctype2(cards, i):
-    if i == len(cards):
-        return ctype(cards), cards
-    elif cards[i] == 'J':
-        maxt =[0, '']
-        for t in cardtypes2:
-            tryc = cards[:i] + t + cards[i+1:]
-            newt = ctype2(tryc, i+1)
-            if newt[0] > maxt[0]:
-                maxt = newt
-        return maxt
-    else:
-        a = ctype2(cards, i+1)
-        return a
-
 def score2(card):
-    s1, newc = ctype2(card[0], 0)
+    s1 = ctype(card[0], True)
     s2 = subscore(card[0], cardtypes2)
 
     return s1 * 100000000000 + s2
