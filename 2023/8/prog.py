@@ -1,6 +1,5 @@
-import sys 
-from collections import defaultdict
-from math import gcd
+import sys
+from math import lcm
 
 def parse():
     lines = open(sys.argv[1]).read().splitlines()
@@ -20,53 +19,32 @@ def part1():
     i = 0
     node = 'AAA'
     steps = 0
+    print(map)
     while True:
         steps += 1
-        if i == len(cmds):
-            i = 0
         instr = cmds[i]
-        i += 1
-        if instr == 'L':
-            node = map[node][0]
-        else:
-            node = map[node][1]
+        i = i + 1 if i < len(cmds) - 1 else 0
+        node = map[node][0] if instr == 'L' else  map[node][1]
         if node == 'ZZZ':
             break
     print('Part1', steps)
 
-def array_lcm(a):
-    lcm = 1
-    for i in a:
-        lcm = lcm*i//gcd(lcm, i)
-    return lcm
-
 def part2():
     cmds, map = parse()
-    start = []
-    for k in map.keys():
-        if k[2] == 'A':
-            start.append(k)
-
+    start = [i for i in map.keys() if i[2] == 'A']
     steps = 0
     i = 0
     nodes = start
     period = [0 for i in range(len(nodes))]
     while True:
         steps += 1
-        if i == len(cmds):
-            i = 0
         instr = cmds[i]
-        i += 1
+        i = i + 1 if i < len(cmds) - 1 else 0
         allz = True
         allperiod = True
         for n in range(len(nodes)):
-            node = nodes[n]
-            if instr == 'L':
-                node = map[node][0]
-            else:
-                node = map[node][1]
-            nodes[n] = node
-            if node[2] != 'Z':
+            nodes[n] = map[nodes[n]][0] if instr == 'L' else  map[nodes[n]][1]
+            if nodes[n][2] != 'Z':
                 allz = False
             else:
                 if period[n] == 0:
@@ -78,7 +56,7 @@ def part2():
         if allz:
             break
     print('steps', steps, 'per', period)
-    ret = array_lcm(period)
+    ret = lcm(*period)
     print('Part2', ret)
 
 part1()
