@@ -1,23 +1,15 @@
 import sys 
 
 def check_hmirror(lines, yy):
-    hmirror = True
-    didcheck = False
-    errors = set()
+    errcnt = 0
     for dy in range(yy+1):
         yu = yy - dy
         yd =  yy + dy + 1
-        if yu >= 0 and yu < len(lines) and yd >= 0 and yd < len(lines):
-            didcheck = True
-            match = True
+        if 0 <= yu < len(lines) and 0 <= yd < len(lines):
             for x in range(len(lines[0])):
                 if lines[yu][x] != lines[yd][x]:
-                    errors.add((x, yu))
-                    match = False
-            if not match:
-                hmirror = False
-
-    return hmirror and didcheck, errors
+                    errcnt += 1
+    return errcnt
 
 def run(npart):
     patterns = open(sys.argv[1]).read().split('\n\n')
@@ -25,17 +17,15 @@ def run(npart):
     for i, p in enumerate(patterns):
         lines = p.splitlines()
         lines = [list(l) for l in lines]
-        for y in range(len(lines)):
-            chk, err = check_hmirror(lines, y)
-            if (chk and npart == 1) or (not chk and len(err) == 1 and npart == 2):
-                score += 100 * (y+1) 
-        # transpose
-        lines = [list(i) for i in zip(*lines)]
+        for scorecoef in [100, 1]:
+            for y in range(len(lines)-1):
+                errcnt = check_hmirror(lines, y)
+                if errcnt == npart - 1:
+                    score += scorecoef * (y+1) 
 
-        for y in range(len(lines)):
-            chk, err = check_hmirror(lines, y)
-            if (chk and npart == 1) or (not chk and len(err) == 1 and npart == 2):
-                score += (y+1)       
+            if scorecoef == 100:
+                # transpose
+                lines = [list(i) for i in zip(*lines)]
 
     print('Part'+str(npart), score)
 
