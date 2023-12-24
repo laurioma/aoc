@@ -1,15 +1,6 @@
 import sys 
 from collections import defaultdict
 
-def printm(matrix, path=None):
-    for y,r in enumerate(matrix):
-        for x,c in enumerate(r):
-            if path != None and (x, y) in path:
-                print('O', end='')
-            else:
-                print(c, end='')
-        print("")
-
 def to_graph(mat, start, end, part1):
     crosses = [start, end]
     for y in range(len(mat)):
@@ -66,27 +57,16 @@ def walkg_dfs(visited, graph, node, end, length):
         return ret
     return 0
 
-def part1():
+def run(partn):
     lines = open(sys.argv[1]).read().splitlines()
     matrix = [list(row) for row in lines]; w=len(matrix[0]); h=len(matrix)
 
-    edges = to_graph(matrix, (1,0), (w-2, h-1), True)
+    edges = to_graph(matrix, (1,0), (w-2, h-1), partn == 1)
 
     visited = set()
     longest = walkg_dfs(visited, edges, (1,0), (w-2, h-1), 0)
 
-    print('Part2', longest)
+    print('Part'+str(partn), longest)
 
-def part2():
-    lines = open(sys.argv[1]).read().splitlines()
-    matrix = [list(row) for row in lines]; w=len(matrix[0]); h=len(matrix)
-
-    edges = to_graph(matrix, (1,0), (w-2, h-1), False)
-
-    visited = set()
-    longest = walkg_dfs(visited, edges, (1,0), (w-2, h-1), 0)
-
-    print('Part2', longest)
-
-part1()
-part2()
+for part in [1, 2]:
+    run(part)
