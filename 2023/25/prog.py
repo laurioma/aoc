@@ -1,6 +1,5 @@
 import networkx as nx
 import sys
-from networkx.algorithms import community
 
 def part1():
     lines = open(sys.argv[1]).read().splitlines()
@@ -10,7 +9,7 @@ def part1():
         for conn in ll[1].split():
             G.add_edge(ll[0], conn)
 
-    communities = community.greedy_modularity_communities(G, cutoff=2, best_n=2)
+    communities = nx.community.greedy_modularity_communities(G, cutoff=2, best_n=2)
     cnt_conn = 0
     for n1 in communities[0]:
         for n2 in communities[1]:
